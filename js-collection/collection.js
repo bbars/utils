@@ -18,7 +18,11 @@ Collection.prototype.filter = function (expr) {
 	if (typeof expr != 'function') {
 		expr = Collection.getComparisonFn(expr);
 	}
-	return new this.constructor(Array.prototype.filter.call(this, expr), this.parent !== false ? this : false);
+	return this.fork(Array.prototype.filter.call(this, expr));
+};
+
+Collection.prototype.fork = function (items) {
+	return new this.constructor(items || this, this.parent !== false ? this : false);
 };
 
 Collection.prototype.call = function (fn) {
@@ -45,6 +49,15 @@ Collection.prototype.set = function (property, value) {
 		item[property] = value;
 	});
 	return this;
+};
+
+Collection.prototype.random = function (count) {
+	count = count || 1;
+	var items = this.fork();
+	while (count < items.length) {
+		items.splice(Math.round(Math.random() * items.length) % items.length, 1);
+	}
+	return items;
 };
 
 Collection.getComparisonFn = function (expr) {
