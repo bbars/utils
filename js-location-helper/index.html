@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>Location.Hash</title>
+<script src="location-helper.js"></script>
+</head>
+<body>
+<p>
+	<a href="#!one=1">#!one=1</a>
+	<a href="#!two=22">#!two=22</a>
+	<a href="#!&three=333">#!&three=333</a>
+	<a href="#!&three=333&four=4444">#!&three=333&four=4444</a>
+	<a href="#position">#position</a>
+</p>
+<p><textarea id="log" style="width:100%; height:10em; resize:vertical;"></textarea></p>
+<script>
+
+LocationHelper.on('change', function (event) {
+	log.value += JSON.stringify(this.getHashParams()) + '\n';
+});
+LocationHelper.bind();
+
+</script>
+</body>
+</html>
