@@ -222,7 +222,7 @@ var locationHelper = (function () {
 					newHash[1] = '';
 				newHash[0] = newHash[0].length > 1 ? newHash[0] : (baseParts.hash && baseParts.hash.split('!')[0] || '');
 				if (!newHash[1]) {
-					newHash[1] = baseParts.hash.split('!')[1] || '';
+					newHash[1] = baseParts.hash && baseParts.hash.split('!')[1] || '';
 				}
 				else if (newHash[1][0] == '&') {
 					newHash[1] = newHash[1].substr(1).split('&');
