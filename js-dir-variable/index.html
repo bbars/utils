@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>createDirElement</title>
+<script type="text/javascript">
+
+function createDirElement(value, name, descriptor) {
+    var valueType = value === null ? 'null' : typeof value;
+    var valueClass;
+    try {
+        valueClass = valueType == 'object' ? value.constructor.name : '';
+    }
+    catch (e) {
+        valueClass = '?';
+    }
+    var res = document.createElement('div');
+    res.className = 'dir-element';
+    res.dirElementValue = value;
+    if (name) {
+        var elName = document.createElement('span');
+        elName.className = 'dir-element-property';
+        elName.textContent = name + ': ';
+        if (descriptor) {
+            if (!descriptor.enumerable)
+                elName.className += ' dir-element-property-hidden';
+            if (!descriptor.writable)
+                elName.className += ' dir-element-property-readonly';
+            if (descriptor.inherited)
+                elName.className += ' dir-element-property-inherited';
+        }
+        res.appendChild(elName);
+        res.setAttribute('data-name', name);
+    }
+    var elValue = document.createElement('span');
+    elValue.className = 'dir-element-value';
+    elValue.setAttribute('data-type', valueType);
+    if (value === null)
+        value = 'null';
+    else if (value === undefined)
+        value = 'undefined';
+    if (valueType == 'string' && value.length > 500) {
+        value = [
+            value.slice(0, 200),
+            value.slice(200, value.length - 200),
+            value.slice(value.length - 200)
+        ];
+        for (var i = 0; i < value.length; i++) {
+            var span = document.createElement('span');
+            span.textContent = value[i];
+            if (i == 1)
+                span.className = 'dir-element-value-ellipsis';
+            elValue.appendChild(span);
+        }
+    }
+    else {
+        elValue.textContent = valueType == 'object' ? valueClass : value;
+    }
+    res.appendChild(elValue);
+    
+    if (valueType == 'object') {
+        elValue.addEventListener('click', createDirElement.objectClickHandler.bind(res));
+    }
+    
+    return res;
+}
+
+createDirElement.objectClickHandler = function (event) {
+    event.preventDefault();
+    var properties = this.querySelector(':scope > .dir-element-properties');
+    if (properties) {
+        this.classList.remove('dir-element-expand');
+        properties.remove();
+    }
+    else {
+        this.classList.add('dir-element-expand');
+        properties = document.createElement('div');
+        properties.className = 'dir-element-properties';
+        
+        var o;
+        for (var o = this.dirElementValue; o !== null; o = Object.getPrototypeOf(o)) {
+            var descriptors = Object.getOwnPropertyDescriptors(o);
+            for (var k in descriptors) {
+                var descriptor = descriptors[k];
+                descriptor.inherited = o != this.dirElementValue;
+                properties.appendChild(createDirElement(descriptor.value, k, descriptor));
+            }
+        }
+        
+        this.appendChild(properties);
+    }
+};
+</script>
+
+<style>
+.dir-element {
+    font-family: 'Consolas', monospace;
+    background: #fff;
+    display: block;
+}
+.dir-element-property,
+.dir-element-value {
+    position: relative;
+    display: inline-block;
+    vertical-align: top;
+}
+
+.dir-element-property {
+    color: #a2a;
+    margin-right: -0.5em;
+}
+.dir-element-property.dir-element-property-hidden {
+    opacity: 0.5;
+}
+.dir-element-property.dir-element-property-inherited:before {
+    content: '\1f851';
+    color: #000;
+    margin-right: 0.25em;
+}
+.dir-element-property + .dir-element-value {
+    left: 1em;
+    margin-right: 1em;
+}
+.dir-element-value[data-type="string"] {
+    color: #d32;
+    white-space: pre-wrap;
+}
+.dir-element-value[data-type="number"] {
+    color: #42d;
+}
+.dir-element-value[data-type="string"]:before,
+.dir-element-value[data-type="string"]:after {
+    content: '"';
+    color: #000;
+}
+.dir-element-value[data-type="string"] > .dir-element-value-ellipsis {
+    display: inline-block;
+    width: 1em;
+    height: 1em;
+    line-height: 1em;
+    overflow: hidden;
+    color: transparent;
+    vertical-align: middle;
+    margin: -1em 0.5em;
+    border-radius: 3px;
+}
+.dir-element-value[data-type="string"] > .dir-element-value-ellipsis:before {
+    content: '\2026';
+    color: #d00;
+    user-select: none;
+    background: #fee;
+    border-radius: 2px;
+    text-align: center;
+    width: 100%;
+    display: inline-block;
+}
+.dir-element-value[data-type="boolean"],
+.dir-element-value[data-type="null"] {
+    color: #a2a;
+}
+.dir-element-value[data-type="undefined"] {
+    color: #888;
+}
+.dir-element-value[data-type="object"] {
+    color: #222;
+    font-style: italic;
+    cursor: pointer;
+}
+.dir-element-value[data-type="object"]:hover {
+    text-decoration: underline;
+}
+.dir-element-value[data-type="function"] {
+    color: #888;
+    font-style: italic;
+    white-space: nowrap;
+    max-width: 50%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+.dir-element-value[data-type="object"]:before {
+    content: '\25b6';
+    font-style: initial;
+    text-indent: 0;
+    width: 1em;
+    display: inline-block;
+    vertical-align: middle;
+    line-height: 1em;
+    height: 1em;
+    text-align: left;
+    margin-right: 0.15em;
+    color: #444;
+    transition: transform 100ms ease;
+}
+.dir-element-expand > .dir-element-value[data-type="object"]:before {
+    transform: rotate(90deg);
+}
+.dir-element > .dir-element-properties {
+    margin-left: 2em;
+}
+.dir-element > .dir-element-properties:empty:before {
+    content: 'empty';
+    color: #888;
+}
+</style>
+</head>
+<body>
+<script>
+
+var windowDir = createDirElement(window);
+document.body.appendChild(windowDir);
+
+</script>
+</body>
+</html>
