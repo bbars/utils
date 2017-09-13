@@ -1,4 +1,4 @@
-function ConfinedArray(length) {
+function LoopedArray(length) {
 	var cursor = 0;
 	this.length = length || 0;
 	
@@ -28,10 +28,10 @@ function ConfinedArray(length) {
 	});
 }
 
-ConfinedArray.prototype = Object.create(Array.prototype);
-ConfinedArray.prototype.constructor = ConfinedArray;
+LoopedArray.prototype = Object.create(Array.prototype);
+LoopedArray.prototype.constructor = LoopedArray;
 
-ConfinedArray.prototype.getIterator = function () {
+LoopedArray.prototype.getIterator = function () {
 	var cursor = this.cursor;
 	var index = -1;
 	var _this = this;
@@ -51,7 +51,7 @@ ConfinedArray.prototype.getIterator = function () {
 	};
 };
 
-ConfinedArray.prototype.toArray = function () {
+LoopedArray.prototype.toArray = function () {
 	var position = this.cursor % this.length;
 	return this.slice(position).concat(this.slice(0, position));
 };

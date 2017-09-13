@@ -5,15 +5,15 @@
 </head>
 <body>
 <h1>LoopedArray</h1>
-<p>Fast limited list implementation. Example usage: manage large and frequently updated series data.</p>
+<p>Fast limited list implementation. Usage example: manage large and frequently updated series data.</p>
 <script src="looped-array.js"></script>
 <script class="show-src">var a = new LoopedArray(5);
 
-for (var i = 0; i < 9; i++) {
-	a.push(i);
+for (var i = 0; i < 99999; i++) {
+	a.push({ i: i, value: Math.round(Math.random() * 100), });
 }
 
-document.write('<pre>' + a.toArray() + '</pre>');
+document.write('<pre>' + JSON.stringify(a.toArray()) + '</pre>');
 </script>
 <h2>Benchmark</h2>
 <script class="show-src">const SIZE = 5000;
