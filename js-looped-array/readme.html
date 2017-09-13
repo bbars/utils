@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>LoopedArray Test</title>
+</head>
+<body>
+<h1>LoopedArray</h1>
+<p>Fast limited list implementation. Example usage: manage large and frequently updated series data.</p>
+<script src="looped-array.js"></script>
+<script class="show-src">var a = new LoopedArray(5);
+
+for (var i = 0; i < 9; i++) {
+	a.push(i);
+}
+
+document.write('<pre>' + a.toArray() + '</pre>');
+</script>
+<h2>Benchmark</h2>
+<script class="show-src">const SIZE = 5000;
+const ITERATIONS = 1000000;
+</script>
+<table style="table-layout:fixed; width:100%;">
+	<tr>
+		<td>
+			<script class="show-src">var timeStart = Date.now();
+var a = new LoopedArray(SIZE);
+for (var i = 0; i < ITERATIONS; i++) {
+	a.push(i);
+}
+document.write('<pre>time: ' + (Date.now() - timeStart) + 'ms</pre>');
+</script>
+		</td>
+		<td>
+			<script class="show-src">var timeStart = Date.now();
+var a = [];
+for (var i = 0; i < ITERATIONS; i++) {
+	a.push(i);
+	if (a.length > SIZE)
+		a.shift();
+}
+document.write('<pre>time: ' + (Date.now() - timeStart) + 'ms</pre>');
+</script>
+		</td>
+	</tr>
+</table>
+<style>
+pre,
+body script.show-src {
+	display: block;
+	font-family: 'Consolas', monospace;
+	white-space: pre-wrap;
+	background: #f6f8fa;
+	border: rgba(0,0,0, 0.1) 1px solid;
+	padding: 0.2em 0.4em;
+	margin: 0.5em 0;
+	tab-size: 4;
+}
+table tr > * {
+	vertical-align: top;
+}
+</style>
+</body>
+</html>
