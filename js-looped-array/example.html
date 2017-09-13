@@ -15,6 +15,12 @@ for (var i = 0; i < 99999; i++) {
 
 document.write('<pre>' + JSON.stringify(a.toArray()) + '</pre>');
 </script>
+<h2>Iterator example</h2>
+<script class="show-src">var item, iterator = a.getIterator();
+while (item = iterator.next()) {
+	console.log(item.index, item.cursor, item.position, item.value);
+}
+</script>
 <h2>Benchmark</h2>
 <script class="show-src">const SIZE = 5000;
 const ITERATIONS = 1000000;
