@@ -3,7 +3,7 @@
 class Base32
 {
 	const BITS_5_RIGHT = 31;
-	const CHARS = 'abcdefghijklmnopqrstuvwxyz234567';
+	const CHARS = 'abcdefghijklmnopqrstuvwxyz234567'; // lower-case
 	
 	public static function encode($data, $padRight = false)
 	{
@@ -43,19 +43,22 @@ class Base32
 	
 	public static function decode($data)
 	{
-		$data = strtolower($data);
+		$data = rtrim($data, "=\x20\t\n\r\0\x0B");
 		$dataSize = strlen($data);
 		$buf = 0;
 		$bufSize = 0;
 		$res = '';
 		$charMap = array_flip(str_split(static::CHARS)); // char=>value map
+		$charMap += array_flip(str_split(strtoupper(static::CHARS))); // add upper-case alternatives
 		
 		for ($i = 0; $i < $dataSize; $i++)
 		{
 			$c = $data[$i];
 			if (!isset($charMap[$c]))
 			{
-				return ('Encoded string contains unexpected char #'.ord($c)." at offset $i (using improper alphabet?)");
+				if ($c == " " || $c == "\r" || $c == "\n" || $c == "\t")
+					continue; // ignore these safe characters
+				throw new Exception('Encoded string contains unexpected char #'.ord($c)." at offset $i (using improper alphabet?)");
 			}
 			$b = $charMap[$c];
 			$buf = ($buf << 5) | $b;
@@ -74,5 +77,5 @@ class Base32
 
 class Base32hex extends Base32
 {
-	const CHARS = '0123456789abcdefghijklmnopqrstuv';
+	const CHARS = '0123456789abcdefghijklmnopqrstuv'; // lower-case
 }
