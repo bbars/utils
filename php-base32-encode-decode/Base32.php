@@ -5,7 +5,7 @@ class Base32
 	const BITS_5_RIGHT = 31;
 	const CHARS = 'abcdefghijklmnopqrstuvwxyz234567';
 	
-	public static function encode($data)
+	public static function encode($data, $padRight = false)
 	{
 		$dataSize = strlen($data);
 		$res = '';
@@ -31,6 +31,11 @@ class Base32
 			$remainder <<= (5 - $remainderSize);
 			$c = $remainder & self::BITS_5_RIGHT;
 			$res .= static::CHARS[$c];
+		}
+		if ($padRight)
+		{
+			$padSize = (8 - ceil(($dataSize % 5) * 8 / 5)) % 8;
+			$res .= str_repeat('=', $padSize);
 		}
 		
 		return $res;
