@@ -1,128 +1,47 @@
 var locationHelper = (function () {
-	function Events(availableTypes) {
-		var events = {};
-		if (availableTypes instanceof Array) {
-			for (var i = 0; i < availableTypes.length; i++)
-				if (availableTypes[i])
-					events[(availableTypes[i] + '').toLowerCase()] = [];
-		}
-		
-		function normType(type) {
-			type = (type + '').toLowerCase();
-			if (availableTypes && !events[type])
-				throw new Error('Unknown event type "'+ type +'"');
-			return type;
-		}
-		
-		this.on = function (types, listener, name) {
-			if (!(types instanceof Array))
-				types = [types];
-			
-			if (typeof listener != 'function')
-				throw new Error('Listener must be a function, "'+ typeof listener +'" passed');
-			
-			types = types.map(normType);
-			
-			for (var i = 0; i < types.length; i++) {
-				if (!events[types[i]])
-					events[types[i]] = [];
-				events[types[i]].push(listener);
-			}
-			
-			return this;
-		};
-		
-		this.off = function (listener, types) {
-			if (types && !(types instanceof Array))
-				types = [types];
-			
-			if (!types || !types.length)
-				types = false;
-			else {
-				types = types.map(normType);
-			}
-			
-			for (var type in events) {
-				if (types && types.indexOf(type) < 0)
-					continue;
-				if (!listener)
-					events[type] = [];
-				else {
-					var j = -1;
-					while ((j = events[type].indexOf(listener)) > -1) {
-						events[type].splice(j, 1);
-					}
-				}
-			}
-			
-			return this;
-		};
-		
-		this.trigger = function (type, data, onBreak) {
-			type = (type + '').toLowerCase();
-			if (availableTypes && typeof events[type] != 'object')
-				throw new Error('Unknown event type "'+ type +'"');
-			else if (typeof events[type] != 'object')
-				return undefined;
-			
-			var event = {
-				type: type,
-			};
-			if (data && typeof data == 'object') {
-				for (var k in data)
-					event[k] = data[k];
-			}
-			
-			for (var i = 0; i < events[type].length; i++) {
-				if (events[type][i].call(this, event, i) === false) {
-					if (onBreak && typeof onBreak == 'function')
-						onBreak.call(this, event, i);
-					return this;
-				}
-			}
-			
-			return this;
-		};
-	}
-	
 	function LocationHelper() {
-		Events.call(this);
-		
 		var prevChange = null;
 		
-		this.on('change', function (event) {
-			if (!prevChange || prevChange.parts.path != event.parts.path) {
-				this.trigger('change-path', {
-					href: event.href,
-					parts: event.parts,
-					prevPath: prevChange ? prevChange.parts.path : null,
-					path: event.parts.path,
-				});
-			}
-			
-			if (!prevChange || prevChange.parts.search != event.parts.search) {
-				this.trigger('change-search', {
-					href: event.href,
-					parts: event.parts,
-					prevSearch: prevChange ? prevChange.parts.search : null,
-					search: event.parts.search,
-				});
-			}
-			
-			if (!prevChange || prevChange.parts.hash != event.parts.hash) {
-				this.trigger('change-hash', {
-					href: event.href,
-					parts: event.parts,
-					prevHash: prevChange ? prevChange.parts.hash : null,
-					hash: event.parts.hash,
-				});
-			}
-			
-			prevChange = JSON.parse(JSON.stringify({
-				href: event.href,
-				parts: event.parts,
+		this.trigger = function (type, detail) {
+			document.dispatchEvent(new CustomEvent(type, {
+				detail: detail,
+				bubbles: true,
+				cancelable: false,
 			}));
-		});
+			
+			if (type == 'location-change') {
+				// trigger relative sub-events:
+				if (!prevChange || prevChange.parts.path != detail.parts.path) {
+					this.trigger('location-change-path', {
+						href: detail.href,
+						parts: detail.parts,
+						prevPath: prevChange ? prevChange.parts.path : null,
+						path: detail.parts.path,
+					});
+				}
+				if (!prevChange || prevChange.parts.search != detail.parts.search) {
+					this.trigger('location-change-search', {
+						href: detail.href,
+						parts: detail.parts,
+						prevSearch: prevChange ? prevChange.parts.search : null,
+						search: detail.parts.search,
+					});
+				}
+				if (!prevChange || prevChange.parts.hash != detail.parts.hash) {
+					this.trigger('location-change-hash', {
+						href: detail.href,
+						parts: detail.parts,
+						prevHash: prevChange ? prevChange.parts.hash : null,
+						hash: detail.parts.hash,
+					});
+				}
+				
+				prevChange = JSON.parse(JSON.stringify({
+					href: detail.href,
+					parts: detail.parts,
+				}));
+			}
+		};
 	}
 	
 	LocationHelper.prototype.parseParams = function (s) {
@@ -181,7 +100,7 @@ var locationHelper = (function () {
 		return o;
 	};
 	
-	var parseURLRegExp = /^(?:(https?|file):\/\/(?:([^\/:]+)(?::(\d+))?|))?(\/[^?#]*)?(\/?[^#]*)?(#\S*)?/;
+	var parseURLRegExp = /^(?:(https?|file|[a-z]+):\/\/(?:([^\/:]+)(?::(\d+))?|))?(\/[^?#]*)?(\/?[^#]*)?(#\S*)?/;
 	
 	LocationHelper.prototype.parseURL = function (url) {
 		var res = parseURLRegExp.exec(url);
@@ -221,7 +140,7 @@ var locationHelper = (function () {
 				if (newHash.length < 2)
 					newHash[1] = '';
 				newHash[0] = newHash[0].length > 1 ? newHash[0] : (baseParts.hash && baseParts.hash.split('!')[0] || '');
-				if (!newHash[1]) {
+				if (typeof newHash[1] == 'undefined') {
 					newHash[1] = baseParts.hash && baseParts.hash.split('!')[1] || '';
 				}
 				else if (newHash[1][0] == '&') {
@@ -237,7 +156,7 @@ var locationHelper = (function () {
 					newHash = [ newHash[0] ];
 				if (newHash[1] && !newHash[0])
 					newHash[0] = '#';
-				parts.hash = newHash.join('!');
+				parts.hash = newHash[0] == '#' && !newHash[1] ? '' : newHash.join('!');
 			}
 		}
 		
@@ -301,7 +220,7 @@ var locationHelper = (function () {
 	
 	LocationHelper.prototype.getSearchParams = function () {
 		var s = this.getSearch();
-		return this.parseParams(s);
+		return this.parseParams(s.slice(1));
 	};
 	
 	LocationHelper.prototype.setLocation = function (hrefOrParts, replace, originalEvent) {
@@ -314,7 +233,7 @@ var locationHelper = (function () {
 			parts: parts,
 		}, '', href);
 		
-		this.trigger('change', {
+		this.trigger('location-change', {
 			href: href,
 			parts: parts,
 			originalEvent: originalEvent,
@@ -340,9 +259,9 @@ var locationHelper = (function () {
 		var _this = this;
 		
 		window.addEventListener('popstate', function (event) {
-			if (!event.state)
+			if (!event.state || !event.state.href || !event.state.parts)
 				return;
-			_this.trigger('change', {
+			_this.trigger('location-change', {
 				href: event.state.href,
 				parts: event.state.parts,
 				originalEvent: event,
@@ -350,14 +269,17 @@ var locationHelper = (function () {
 		}, false);
 		
 		document.body.addEventListener('click', function (event) {
-			if (event.target.nodeName != 'A' || !event.target.href)
+			var a = event.target;
+			while (a && a.nodeName != 'A')
+				a = a.parentElement;
+			if (!a || !a.href)
 				return;
 			
-			var a = event.target;
-			var curParts = _this.parseURL(_this.getHref());
 			var parts = _this.parseURL(a.href);
-			if (!parts)
+			if (!parts || !/^https?:/.test(parts.protocol))
 				return;
+			
+			var curParts = _this.parseURL(_this.getHref());
 			if (parts.host != curParts.host || parts.protocol != curParts.protocol || parts.port != curParts.port)
 				return;
 			
@@ -368,7 +290,7 @@ var locationHelper = (function () {
 			if (bindParams !== true && bindParams.hash && curParts.hash != parts.hash)
 				return;
 			
-			_this.setLocation(parts, false);
+			_this.setLocation(parts, false, event);
 			
 			event.preventDefault();
 		}, false);
