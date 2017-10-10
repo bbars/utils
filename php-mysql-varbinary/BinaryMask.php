@@ -75,11 +75,11 @@ class BinaryMask {
 }
 
 class BinaryIds extends BinaryMask {
-	protected function decrease($number) {
+	protected static function decrease($number) {
 		return $number - 1;
 	}
 	
-	protected function increase($number) {
+	protected static function increase($number) {
 		return $number + 1;
 	}
 	
