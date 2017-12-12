@@ -1,4 +1,18 @@
 var locationHelper = (function () {
+	/**
+	 * CustomEvent polyfill
+	 * @see https://developer.mozilla.org/ru/docs/Web/API/CustomEvent/CustomEvent
+	 */
+	if (typeof window.CustomEvent !== 'function') {
+		function CustomEvent (event, params) {
+			params = params || { bubbles: false, cancelable: false, detail: undefined };
+			var evt = document.createEvent('CustomEvent');
+			evt.initCustomEvent(event, params.bubbles, params.cancelable, params.detail);
+			return evt;
+		}
+		CustomEvent.prototype = window.Event.prototype;
+	}
+	
 	function LocationHelper() {
 		var prevChange = null;
 		
@@ -213,6 +227,10 @@ var locationHelper = (function () {
 		return document.location.search;
 	};
 	
+	LocationHelper.prototype.getPath = function () {
+		return document.location.pathname;
+	};
+	
 	LocationHelper.prototype.getHashParams = function () {
 		var s = this.getHash();
 		return this.parseParams(s.split('!', 2)[1] || '');
@@ -272,7 +290,11 @@ var locationHelper = (function () {
 			var a = event.target;
 			while (a && a.nodeName != 'A')
 				a = a.parentElement;
-			if (!a || !a.href)
+			if (a && a.target == '_null') {
+				event.preventDefault();
+				return false;
+			}
+			if (!a || !a.href || (a.target || '_self') != '_self')
 				return;
 			
 			var parts = _this.parseURL(a.href);
