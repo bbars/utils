@@ -66,7 +66,7 @@ function eventLogger(event) {
 </head>
 <body>
 <p>Primes:</p>
-<div id="lv1" style="height: 20em"></div>
+<div id="lv1" tabindex="0" style="height: 20em"></div>
 <script>
 
 var primesAdapter = new ListView.PrimesAdapter();
@@ -80,7 +80,7 @@ lv1.container.addEventListener('lv-draw', eventLogger);
 </script>
 
 <p>Randoms:</p>
-<div id="lv2" data-listview-orientation="horizontal"></div>
+<div id="lv2" tabindex="0" data-listview-orientation="horizontal"></div>
 <script>
 
 var randomAdapter = {

@@ -388,6 +388,38 @@ function ListView(container, adapter, orientation) {
 		prevPoint = null;
 	});
 	
+	container.addEventListener('keydown', function (event) {
+		if (event.altKey || event.ctrlKey || event.shiftKey)
+			return;
+		
+		var up = 38;
+		var down = 40;
+		var left = 37;
+		var right = 39;
+		var pgup = 33;
+		var pgdn = 34;
+		var key = event.keyCode || event.which;
+		var containerSize = getViewSize(container);
+		
+		if ((vertical && key == up) || (!vertical && key == left)) {
+			_this.scrollBy(+containerSize / 10);
+		}
+		else if ((vertical && key == down) || (!vertical && key == right)) {
+			_this.scrollBy(-containerSize / 10);
+		}
+		else if (key == pgup) {
+			_this.scrollBy(+containerSize);
+		}
+		else if (key == pgdn) {
+			_this.scrollBy(-containerSize);
+		}
+		else {
+			return;
+		}
+		event.preventDefault();
+		return false;
+	});
+	
 	this.redraw();
 }
 
