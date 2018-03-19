@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta name="viewport" content="width=device-width, minimum-scale=1, initial-scale=1, shrink-to-fit=no">
+<title>ListView</title>
+<script src="listview.js"></script>
+<style>
+body {
+	margin: 1em;
+}
+
+.listview {
+	border: #333 1px solid;
+	border-color: #999 #ccc #ccc #999;
+	border-radius: 1px;
+	box-sizing: border-box;
+	margin: 1em 0;
+}
+
+.listview[data-listview-orientation="vertical"] > .listview-inner {
+	width: 100%;
+}
+.listview[data-listview-orientation="horizontal"] > .listview-inner {
+	height: 100%;
+}
+
+.listview > .listview-inner > * {
+	padding: 0.5em 1em;
+}
+.listview[data-listview-orientation="vertical"] > .listview-inner > * {
+	border-bottom: #eee 1px solid;
+}
+.listview[data-listview-orientation="vertical"] > .listview-inner > :last-child {
+	border-bottom: none;
+}
+.listview[data-listview-orientation="horizontal"] > .listview-inner > * {
+	border-right: #eee 1px solid;
+}
+.listview[data-listview-orientation="horizontal"] > .listview-inner > :last-child {
+	border-bottom: none;
+}
+
+</style>
+<script>
+
+function eventLogger(event) {
+	console.log(event);
+	var className = 'event-logger-' + event.type;
+	var el = document.getElementsByClassName(className)[0];
+	if (!el) {
+		el = document.createElement('p');
+		el.className = 'event-logger ' + className;
+		el.textContent = event.type;
+		el.dataset.eventLoggerCount = 0;
+		document.body.appendChild(el);
+	}
+	el.dataset.eventLoggerCount++;
+	
+	el.classList.add('highlight');
+	setTimeout(function () {
+		el.classList.remove('highlight');
+	}, 1);
+}
+
+</script>
+</head>
+<body>
+<p>Primes:</p>
+<div id="lv1" style="height: 20em"></div>
+<script>
+
+var primesAdapter = new ListView.PrimesAdapter();
+var lv1 = new ListView(document.getElementById('lv1'), primesAdapter);
+
+lv1.container.addEventListener('lv-scroll-animation', eventLogger);
+lv1.container.addEventListener('lv-scroll-stop', eventLogger);
+lv1.container.addEventListener('lv-get-view', eventLogger);
+lv1.container.addEventListener('lv-draw', eventLogger);
+
+</script>
+
+<p>Randoms:</p>
+<div id="lv2" data-listview-orientation="horizontal"></div>
+<script>
+
+var randomAdapter = {
+	len: 30,
+	getView: function (i) {
+		var res = document.createElement('div');
+		res.textContent = Math.round(Number.MAX_SAFE_INTEGER * Math.random());
+		return res;
+	},
+};
+
+var lv2 = new ListView(document.getElementById('lv2'), randomAdapter);
+
+lv2.container.addEventListener('lv-scroll-animation', eventLogger);
+lv2.container.addEventListener('lv-scroll-stop', eventLogger);
+lv2.container.addEventListener('lv-get-view', eventLogger);
+lv2.container.addEventListener('lv-draw', eventLogger);
+
+</script>
+<style>
+
+.event-logger {
+	color: #000;
+	transition: color 1s ease;
+}
+.event-logger.highlight {
+	color: #0c0;
+	transition: all 0s ease;
+}
+.event-logger:after {
+	content: attr(data-event-logger-count);
+	margin-left: 1em;
+	color: #fff;
+	background: #333;
+	border-radius: 0.3em;
+	padding: 0.2em 0.5em;
+}
+
+</style>
+</body>
+</html>
