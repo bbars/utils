@@ -102,13 +102,18 @@ var locationHelper = (function () {
 		if (name === '') {
 			if (dir !== false && !(o[dir] instanceof Array))
 				o[dir] = [];
-			if (dir !== false)
+			if (dir !== false) {
+				var v = o[dir];
+				delete o[dir];
+				o[dir] = v;
 				o = o[dir];
+			}
 			o.push(value);
 		}
 		else {
 			if (dir !== false)
 				o = o[dir];
+			delete o[name];
 			o[name] = value;
 		}
 		
@@ -248,6 +253,24 @@ var locationHelper = (function () {
 		var href = this.buildURL(parts, curParts);
 		
 		history[replace ? 'replaceState' : 'pushState']({
+			href: href,
+			parts: parts,
+		}, '', href);
+		
+		this.trigger('location-change', {
+			href: href,
+			parts: parts,
+			originalEvent: originalEvent,
+		});
+		
+		return this;
+	};
+	
+	LocationHelper.prototype.reload = function (originalEvent) {
+		var href = this.getHref();
+		var parts = this.parseURL(href);
+		
+		history['replaceState']({
 			href: href,
 			parts: parts,
 		}, '', href);
