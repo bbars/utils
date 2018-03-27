@@ -15,10 +15,11 @@
 <p><textarea id="log" style="width:100%; height:10em; resize:vertical;"></textarea></p>
 <script>
 
-LocationHelper.on('change', function (event) {
-	log.value += JSON.stringify(this.getHashParams()) + '\n';
+window.addEventListener('location-change', function () {
+	log.value += JSON.stringify(locationHelper.getHashParams()) + '\n';
+	log.scrollTop = log.scrollHeight;
 });
-LocationHelper.bind();
+locationHelper.bind();
 
 </script>
 </body>
