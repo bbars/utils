@@ -69,6 +69,12 @@ var locationHelper = (function () {
 			param = s[i].split('=', 2);
 			LocationHelper.setValueByPath(res, param[0], param.length > 1 ? param[1] : true);
 		}
+		LocationHelper.walkObjectTree(res, function (value, key, parent) {
+			if (typeof value != 'object')
+				return value;
+			var arr = LocationHelper.isArray(value);
+			return arr || value;
+		});
 		return res;
 	};
 	
@@ -117,6 +123,35 @@ var locationHelper = (function () {
 			o[name] = value;
 		}
 		
+		return o;
+	};
+	
+	LocationHelper.isArray = function (o) {
+		if (o instanceof Array)
+			return true;
+		if (typeof o != 'object' || !o)
+			return false;
+		var re = /^\d+$/;
+		var arr = [];
+		for (var k in o) {
+			if (k == 'length')
+				continue;
+			if (!re.test(k))
+				return false;
+			arr[k] = o[k];
+		}
+		return arr;
+	};
+	
+	LocationHelper.walkObjectTree = function (o, cb) {
+		if (typeof o != 'object' || !o)
+			return o;
+		for (var k in o) {
+			o[k] = cb(o[k], k, o);
+			if (typeof o == 'object' && o) {
+				this.walkObjectTree(o[k], cb);
+			}
+		}
 		return o;
 	};
 	
