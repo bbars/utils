@@ -128,7 +128,7 @@ var locationHelper = (function () {
 	
 	LocationHelper.isArray = function (o) {
 		if (o instanceof Array)
-			return true;
+			return o;
 		if (typeof o != 'object' || !o)
 			return false;
 		var re = /^\d+$/;
@@ -235,20 +235,31 @@ var locationHelper = (function () {
 	};
 	
 	LocationHelper.prototype.buildParams = function (o, parent) {
+		if (typeof o == 'undefined' || o === null)
+			return '';
 		if (typeof o != 'object')
 			return parent + '=' + encodeURIComponent(o);
 		
 		var s = [];
 		if (o instanceof Array) {
+			var prevDefinedI = -1;
 			for (var i = 0; i < o.length; i++) {
 				var v = o[i];
-				var path = parent ? parent + '[]' : '[]';
+				if (typeof v == 'undefined' || v === null)
+					continue;
+				var path = parent ? parent + '[' : '[';
+				if (i - prevDefinedI > 1)
+					path += i;
+				path += ']';
 				s.push(this.buildParams(v, path));
+				prevDefinedI = i;
 			}
 		}
 		else {
 			for (var k in o) {
 				var v = o[k];
+				if (typeof v == 'undefined' || v === null)
+					continue;
 				var path = parent ? parent + '[' + encodeURIComponent(k) + ']' : encodeURIComponent(k);
 				s.push(this.buildParams(v, path));
 			}
