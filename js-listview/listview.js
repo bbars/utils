@@ -301,7 +301,9 @@ function ListView(container, adapter, orientation) {
 	};
 	
 	this.scrollToIndex = function (index) {
+		scrollByAnim = 0;
 		this.redraw(index);
+		dispatchScrollStop();
 		return this;
 	};
 	
