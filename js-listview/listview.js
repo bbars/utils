@@ -379,7 +379,9 @@ function ListView(container, adapter, orientation) {
 				}
 			}, 0);
 			if (dpc > 0) {
-				_this.scrollBy((dp / dpc) * (getViewSize(container) / 50));
+				var dir = dp < 0 ? -1 : +1;
+				var offset = Math.pow(Math.abs(dp) / dpc, 1.2);
+				_this.scrollBy(dir * offset * (getViewSize(container) / 50));
 			}
 			else {
 				_this.scrollBy(0, true, false);
