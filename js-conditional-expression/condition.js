@@ -45,7 +45,7 @@ Condition.parse = function (s, outer) {
 		if (op == '(') {
 			level++;
 			var inner = new Condition();
-			s = parse(s, inner);
+			s = this.parse(s, inner);
 			res.push(inner);
 		}
 		else if (op == ')') {
@@ -68,7 +68,6 @@ Condition.parse = function (s, outer) {
 		}
 		
 		expr = '';
-		re.lastIndex = -1;
 	} while (s.trim());
 	
 	
