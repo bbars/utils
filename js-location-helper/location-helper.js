@@ -83,8 +83,9 @@ var locationHelper = (function () {
 			path = path.replace(/^([^\[]+)/, '[$1]');
 			path = path.slice(1, -1).split('][');
 		}
-		if (typeof value == 'string')
-			value = decodeURIComponent(value);
+		if (typeof value == 'string') {
+			value = value == '%0' ? null : decodeURIComponent(value);
+		}
 		
 		var name = path.pop();
 		var res = o;
@@ -114,13 +115,15 @@ var locationHelper = (function () {
 				o[dir] = v;
 				o = o[dir];
 			}
-			o.push(value);
+			if (value !== null)
+				o.push(value);
 		}
 		else {
 			if (dir !== false)
 				o = o[dir];
 			delete o[name];
-			o[name] = value;
+			if (value !== null)
+				o[name] = value;
 		}
 		
 		return o;
