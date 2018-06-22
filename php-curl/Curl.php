@@ -158,8 +158,16 @@ class Curl {
 			CURLINFO_HEADER_OUT => true,
 			CURLOPT_RETURNTRANSFER => true,
 		));
-		$this->response = explode("\r\n\r\n", curl_exec($this->ch), 2);
+		$this->response = self::parseHttpResponse(curl_exec($this->ch));
 		return $this;
+	}
+	
+	protected static function parseHttpResponse($s) {
+		$res = explode("\r\n\r\n", $s, 2);
+		if (preg_match('/^HTTP\/\S+\s+100\b/', $res[0])) {
+			return self::parseHttpResponse($res[1]);
+		}
+		return $res;
 	}
 	
 	public function getResponseHeaders() {
