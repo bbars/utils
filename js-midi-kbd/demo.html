@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>MidiKbd</title>
+<script type="text/javascript" src="midi-kbd.js"></script>
+</head>
+<body>
+<p>
+	<label><input type="checkbox" id="attrVertical" /> vertical</label>
+</p>
+<p>
+	<label>min: <input type="number" id="attrMin" min="0" max="119" /></label>
+	<label>max: <input type="number" id="attrMax" min="0" max="119" /></label>
+</p>
+<midi-kbd id="midiKbd" min="0" max="31"></midi-kbd>
+<script type="text/javascript">
+
+var audioCtx = new AudioContext();
+var osc;
+
+midiKbd.addEventListener('playnote', function (event) {
+	audioCtx.resume();
+	if (osc) {
+		try {
+			osc.stop();
+			osc.disconnect();
+		} catch (e) {}
+	}
+	osc = audioCtx.createOscillator();
+	osc.connect(audioCtx.destination);
+	osc.frequency.value = midiNoteToFreq(event.detail.note);
+	osc.start();
+});
+
+midiKbd.addEventListener('stopnote', function (event) {
+	osc.stop();
+});
+
+function midiNoteToFreq(note) {
+	return Math.pow(2, ((note) / 12)) * 440;
+}
+
+// handle properties:
+
+attrVertical.checked = midiKbd.vertical;
+attrVertical.addEventListener('change', function () {
+	midiKbd.vertical = this.checked;
+});
+
+attrMin.value = midiKbd.min;
+attrMin.addEventListener('input', function () {
+	midiKbd.min = this.value;
+});
+
+attrMax.value = midiKbd.max;
+attrMax.addEventListener('input', function () {
+	midiKbd.max = this.value;
+});
+
+
+</script>
+</body>
+</html>
