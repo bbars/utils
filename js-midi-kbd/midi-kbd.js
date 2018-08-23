@@ -137,7 +137,7 @@
 	const tplKey = document.createElement('span');
 	
 	function isNoteBlack(note) {
-		note = note % 12;
+		note = (((note-5) % 12) + 12) % 12;
 		return (note === 1)
 			|| (note === 3)
 			|| (note === 5)
