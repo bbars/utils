@@ -37,7 +37,7 @@ midiKbd.addEventListener('stopnote', function (event) {
 });
 
 function midiNoteToFreq(note) {
-	return Math.pow(2, ((note) / 12)) * 440;
+	return Math.pow(2, ((note - 19) / 12)) * 440;
 }
 
 // handle properties:
