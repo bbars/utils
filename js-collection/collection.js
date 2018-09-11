@@ -21,6 +21,13 @@ Collection.prototype.filter = function (expr) {
 	return this.fork(Array.prototype.filter.call(this, expr));
 };
 
+Collection.prototype.map = function (expr) {
+	if (typeof expr != 'function') {
+		expr = Collection.getComparisonFn(expr);
+	}
+	return this.fork(Array.prototype.map.call(this, expr));
+};
+
 Collection.prototype.fork = function (items) {
 	return new this.constructor(items || this, this.parent !== false ? this : false);
 };
