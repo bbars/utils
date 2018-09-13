@@ -1,18 +1,30 @@
 function Collection(items, parent) {
+	Array.apply(this);
+	Object.defineProperties(this, {
+		parent: {
+			enumerable: false,
+			writable: false,
+			value: parent === false ? parent : parent || null,
+		},
+		length: {
+			enumerable: false,
+			writable: true,
+			value: 0,
+		},
+	});
+	
 	if (items && items.length > 0) {
 		for (var i = 0; i < items.length; i++)
 			this.push(items[i]);
 	}
-	
-	Object.defineProperty(this, 'parent', {
-		enumerable: false,
-		writable: false,
-		value: parent === false ? parent : parent || null,
-	});
 }
 
 Collection.prototype = Object.create(Array.prototype);
 Collection.prototype.constructor = Collection;
+
+Collection.prototype.toJSON = function () {
+	return Array.prototype.slice.call(this, 0);
+};
 
 Collection.prototype.filter = function (expr) {
 	if (typeof expr != 'function') {
