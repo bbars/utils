@@ -17,6 +17,15 @@ var JSONNE = new (function () {
         }
         return name;
     }
+    function _unhex(str) {
+        var size = Math.ceil(str.length / 2);
+        var bytes = new Array(size);
+        for (var i = 0; i < size; i++) {
+            bytes[i] = parseInt('0' + str.substr(i * 2, 2), 16);
+        }
+        return String.fromCharCode.apply(null, bytes);
+    }
+    var fmtRe = /(?:^(base64|hex)\s*(["']))|(^0x|^0b)|(\.|e)/i;
     function _unescapeValue(str) {
         str = str.trim();
         if (!str) {
@@ -30,7 +39,23 @@ var JSONNE = new (function () {
             return false;
         if (str === 'true')
             return true;
-        if (str.indexOf('.') > -1)
+        if (str === 'undefined')
+            return undefined;
+        var m = fmtRe.exec(str);
+        if (!m) {
+            return str;
+        }
+        if (m[1]) {
+            str = _unescape(str.slice(m[0].length - 1));
+            m[1] = m[1].toLowerCase();
+            if (m[1] === 'base64')
+                return atob(str);
+            else if (m[1] === 'hex')
+                return _unhex(str);
+            else
+                throw 'Unsupported encoding: ' + m[1];
+        }
+        else if (!m[3] && m[4])
             return parseFloat(str);
         else
             return parseInt(str);
@@ -73,7 +98,7 @@ var JSONNE = new (function () {
             var _space1 = !space ? '' : '\n' + new Array(level + 1).fill(space).join('');
             var _space2 = !space ? '' : '\n' + new Array(level + 0).fill(space).join('');
             if (typeof o === 'undefined') {
-                return 'undefined';
+                return '';
             }
             else if (o instanceof Array) {
                 if (!t)
@@ -188,22 +213,24 @@ var JSONNE = new (function () {
             token = token[0];
             if (token === '{') {
                 stack.push({});
-                infoStack.push(left);
+                infoStack.push(_unescape(left));
                 left = '';
             }
             else if (token === '[') {
                 stack.push([]);
-                infoStack.push(left);
+                infoStack.push(_unescape(left));
                 left = '';
             }
             else if (token === '(') {
-                infoStack.push(left);
+                infoStack.push(_unescape(left));
                 left = '';
             }
             else if (token === '"' || token === "'") {
-                if (left.trim())
+                var prefix = left.trim();
+                if (prefix && prefix !== 'base64' && prefix !== 'hex') {
                     throw 'Unexpected opening quote near "' + left + '")';
-                left = parseStr(token);
+                }
+                left = prefix + parseStr(token);
             }
             else if (token === ')') {
             }
