@@ -1,4 +1,4 @@
-Object{
+TestObject{
 	boolTrue: true,
 	boolFalse: false,
 	null: null,
@@ -7,10 +7,12 @@ Object{
 	watLink: @.wat,
 	"obj:1": {
 		zalgoBase64: base64"SMybzITMhMy/zIHNksyozJfMoMyXzKfNms2azLhlzJDMjcyCzaDNhs2QzIXMv8yIzKTNnMymzK7Mu8yxzLPMq8y2bMyLzJXMvs2bzYzMlc2dzIPNlM2WzJ3MoM2NzLxszJvMlcyKzYTMh8yOzIbMmsyXzJ7MnMyYzYXMnW/NgMyMzJTNgs2GzIHNkcyVzIzNoM2fzKbMnMy7zZbNk82OzKvMqQ==",
-		numbers: [-1,-2,-3, 1.1, 0.2e3, .5, -.25, .9e1]
+		numbers: [-1,-2,-3, 1.1, 0.2e-3, .5, -.25, .9e1]
 	},
 	wat: wegfwegweg,
-	'arr': ,
+	'arr': 'List of numbers'['00', 01, 002, 0x3, 0o4, 0b101,,,,0o11, 010, 0xb],
 	obj1Link: @root."obj:1",
 	self: @root,
+	1: 'one',
+	2: 'two',
 }
