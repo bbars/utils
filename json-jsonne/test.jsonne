@@ -1,0 +1,16 @@
+Object{
+	boolTrue: true,
+	boolFalse: false,
+	null: null,
+	hex: hex"48656c6c6f2c20686578",
+	date: Date("2018-10-22T17:14:35.814Z"),
+	watLink: @.wat,
+	"obj:1": {
+		zalgoBase64: base64"SMybzITMhMy/zIHNksyozJfMoMyXzKfNms2azLhlzJDMjcyCzaDNhs2QzIXMv8yIzKTNnMymzK7Mu8yxzLPMq8y2bMyLzJXMvs2bzYzMlc2dzIPNlM2WzJ3MoM2NzLxszJvMlcyKzYTMh8yOzIbMmsyXzJ7MnMyYzYXMnW/NgMyMzJTNgs2GzIHNkcyVzIzNoM2fzKbMnMy7zZbNk82OzKvMqQ==",
+		numbers: [-1,-2,-3, 1.1, 0.2e3, .5, -.25, .9e1]
+	},
+	wat: wegfwegweg,
+	'arr': ,
+	obj1Link: @root."obj:1",
+	self: @root,
+}

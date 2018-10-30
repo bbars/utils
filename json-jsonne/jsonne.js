@@ -25,7 +25,7 @@ var JSONNE = new (function () {
         }
         return String.fromCharCode.apply(null, bytes);
     }
-    var fmtRe = /(?:^(base64|hex)\s*(["']))|(^0x|^0b)|(\.|e)/i;
+    var fmtRe = /^(?:(base64|hex)\s*(["'])|-?((?:\d+\.|\.\d+)(?:e-?\d+)?)|(0x|0o|0b|-?\d+))/i;
     function _unescapeValue(str) {
         str = str.trim();
         if (!str) {
@@ -55,8 +55,15 @@ var JSONNE = new (function () {
             else
                 throw 'Unsupported encoding: ' + m[1];
         }
-        else if (!m[3] && m[4])
+        else if (!m[4] && m[3]) {
             return parseFloat(str);
+        }
+        else if (m[4] === '0x')
+            return parseInt(str.slice(2), 16);
+        else if (m[4] === '0o')
+            return parseInt(str.slice(2), 8);
+        else if (m[4] === '0b')
+            return parseInt(str.slice(2), 2);
         else
             return parseInt(str);
     }
