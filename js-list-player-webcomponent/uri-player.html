@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>Player</title>
+<script type="text/javascript" src="list-player.js"></script>
+<style>
+html, body {
+	display: block;
+	width: 100%;
+	height: 100%;
+	padding: 0;
+	margin: 0;
+	font-family: 'Segoe UI', 'PT Sans', 'Ubuntu', sans-serif;
+}
+#player {
+	border: none;
+	display: block;
+	width: 100%;
+	height: 100%;
+}
+</style>
+</head>
+<body>
+<list-player id="player"></list-player>
+<script>
+
+RegExp.escape = (function () {
+	var re = /[\-\[\]\/\{\}\(\)\*\+\?\.\\\^\$\|]/g;
+	return function escape(s) {
+		return (s + '').replace(re, '\\$&');
+	};
+})();
+
+player.addEventListener('volumechange', function (event) {
+	localStorage.setItem('volume', player.volume);
+});
+
+player.addEventListener('play', function (event) {
+	localStorage.setItem('play', 1);
+});
+
+player.addEventListener('pause', function (event) {
+	localStorage.setItem('play', 0);
+});
+
+var timeupdateValue = 0;
+player.addEventListener('timeupdate', function (event) {
+	if (Math.abs(timeupdateValue - player.currentTime) >= 5) {
+		timeupdateValue = player.currentTime | 0;
+		setParameter('t', timeupdateValue);
+	}
+});
+
+(function () {
+	player.playlist = getParameter('play');
+	if (getParameter('scrollToEnd')) {
+		player.scrollTop = player.scrollHeight;
+	}
+})();
+
+(function () {
+	var curSrc = getParameter('cur');
+	if (curSrc) {
+		var videoTime = +getParameter('t') || null;
+		
+		var curA = plist.querySelector('a[href="' + curSrc + '"]');
+		if (curA) {
+			curA.focus();
+			playA(curA);
+			if (videoTime !== null && !isNaN(videoTime)) {
+				setTimeout(function () {
+					video.currentTime = Math.max(0, videoTime - 1);
+					videoHolder.focus();
+				}, 100);
+			}
+			if (localStorage.getItem('play') != '1') {
+				pause();
+			}
+		}
+	}
+})();
+
+(function () {
+	var volume = localStorage.getItem('volume');
+	if (volume !== null) {
+		player.volume = volume;
+	}
+	var lightness = localStorage.getItem('lightness');
+	if (lightness !== null) {
+		player.lightness = lightness;
+	}
+})();
+
+function getParameter(name) {
+	name = encodeURIComponent(name);
+	var re = new RegExp('[#&]' + RegExp.escape(name) + '(?:=([^&]*))?(?:&|$)');
+	var m = re.exec(document.location.hash);
+	if (!m)
+		return null;
+	return m[1] === undefined ? true : decodeURIComponent(m[1]);
+}
+
+function setParameter(name, value) {
+	name = encodeURIComponent(name);
+	value = encodeURIComponent(value);
+	var re = new RegExp('([#&])(' + RegExp.escape(name) + ')=([^&]*)', 'g');
+	var s = document.location.hash.toString().replace(re, '');
+	if (s[0] != '#')
+		s = '#' + s;
+	if (s.length > 1 && s[s.length - 1] != '&')
+		s = s + '&';
+	s += name + '=' + value;
+	document.location.replace(s);
+	return true;
+}
+
+</script>
+</body>
+</html>
