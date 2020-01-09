@@ -347,7 +347,7 @@ class Curl {
 		$mh = curl_multi_init();
 		
 		foreach ($curls as $curl) {
-			if (!is_a($curl, CLASS)) {
+			if (!is_a($curl, __CLASS__)) {
 				continue;
 			}
 			curl_multi_add_handle($mh, $curl->ch);
@@ -363,7 +363,7 @@ class Curl {
 		
 		foreach ($curls as $curl) {
 			$curl->onAfterExec(curl_multi_getcontent($curl->ch));
-			if (!is_a($curl, CLASS)) {
+			if (!is_a($curl, __CLASS__)) {
 				continue;
 			}
 		}
@@ -375,20 +375,20 @@ class Curl {
 class CurlException extends Exception {
 	public $c = null;
 	
-	public function construct($message, $code, Curl $c = null) {
-		parent::construct($message, $code);
+	public function __construct($message, $code, Curl $c = null) {
+		parent::__construct($message, $code);
 		$this->c = $c;
 	}
 }
 
 class CurlHttpError extends CurlException {
-	public function construct($message, Curl $c = null) {
-		parent::construct($message, $c === null ? -1 : $c->getCode(), $c);
+	public function __construct($message, Curl $c = null) {
+		parent::__construct($message, $c === null ? -1 : $c->getCode(), $c);
 	}
 }
 
 class CurlHttpError404 extends CurlHttpError {
-	public function construct($message, Curl $c = null) {
-		parent::construct($message, $c);
+	public function __construct($message, Curl $c = null) {
+		parent::__construct($message, $c);
 	}
 }
