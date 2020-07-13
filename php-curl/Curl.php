@@ -8,11 +8,15 @@ class Curl {
 	protected $url = '';
 	protected $proxy = '';
 	protected $sslVerification = true;
+	protected $outputFile = null;
 	
 	public function __construct($method, $url) {
 		$this->ch = curl_init();
 		$this->setRequestMethod($method);
 		$this->setUrl($url);
+		$this->setOpt(array(
+			CURLOPT_RETURNTRANSFER => true,
+		));
 	}
 	
 	public static function buildUrl($url, $add = null) {
@@ -182,6 +186,21 @@ class Curl {
 		return $this->proxy;
 	}
 	
+	public function setOutputFile($fp) {
+		if (!is_resource($fp)) {
+			$fp = null;
+		}
+		$this->outputFile = $fp;
+		$this->setOpt(CURLOPT_FILE, $fp);
+		if (!$fp) {
+			$this->setOpt(CURLOPT_RETURNTRANSFER, true);
+		}
+	}
+	
+	public function getOutputFile() {
+		return $this->outputFile;
+	}
+	
 	public function getUrl() {
 		return $this->url;
 	}
@@ -234,7 +253,6 @@ class Curl {
 		$this->setOpt(array(
 			CURLOPT_HEADER => true,
 			CURLINFO_HEADER_OUT => true,
-			CURLOPT_RETURNTRANSFER => true,
 		));
 	}
 	
