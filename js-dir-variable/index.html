@@ -32,9 +32,12 @@ var createDirElement = (function () {
         }
         var res = TPL.wrapper.cloneNode();
         res.dirElementValue = value;
-        if (name) {
+        if (typeof name !== 'undefined' && name !== null) {
             var elName = TPL.propName.cloneNode();
             elName.textContent = name + ': ';
+            if (name === '') {
+                elName.insertBefore(createDirElement(name), elName.childNodes[0]);
+            }
             if (descriptor) {
                 if (!descriptor.enumerable) {
                     elName.className += ' cde-property-hidden';
@@ -168,7 +171,7 @@ var createDirElement = (function () {
     opacity: 0.5;
 }
 .cde-property.cde-property-inherited:before {
-    content: '\1f851';
+    content: '\21e1';
     display: inline-block;
     color: #99c;
     width: 0.75em;
