@@ -8,6 +8,9 @@ Sheet.prototype.getObject = function (y, header) {
 	if (!row) {
 		return null;
 	}
+	if (header === false) {
+		return row;
+	}
 	header = !header ? this.header : [].concat(header);
 	var o = {};
 	for (var x = 0; x < header.length; x++) {
@@ -17,6 +20,13 @@ Sheet.prototype.getObject = function (y, header) {
 		o[header[x]] = row[x];
 	}
 	return o;
+};
+
+Sheet.prototype.entries = function* (header) {
+	var len = this.data.length;
+	for (var y = 0; y < len; y++) {
+		yield this.getObject(y, header);
+	}
 };
 
 Sheet.parseCsv = function (s, headerIncluded, colSep, rowSep) {
@@ -90,3 +100,7 @@ Sheet.parseCsv = function (s, headerIncluded, colSep, rowSep) {
 	}
 	return res;
 };
+
+if (typeof module === 'object') {
+	module.exports = Sheet;
+}
