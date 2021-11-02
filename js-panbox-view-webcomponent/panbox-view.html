@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>PanboxView demo</title>
+<script type="module" src="PanboxView.js"></script>
+<style type="text/css">
+
+html,
+body {
+	width: 100%;
+	height: 100%;
+	margin: 0;
+}
+
+panbox-view {
+	width: 400px;
+	height: 400px;
+	width: 80vw;
+	height: 80vh;
+	position: relative;
+	left: 10vmin;
+	top: 10vmin;
+}
+
+.pic {
+	display: block;
+	width: 100%;
+	height: 100%;
+	object-fit: contain;
+	background: grey;
+}
+
+</style>
+</head>
+<body>
+<panbox-view max-scale="100">
+	<img src="IMG_20210130_210312001.jpg" class="pic" />
+	<p>Lorem ipsum dolor sit amet, consectetur adipiscing elit. Duis non turpis posuere, gravida orci eu, molestie ex. Nulla non velit libero. Mauris viverra a massa eget facilisis. Maecenas varius varius velit, non elementum nibh tincidunt ut. Morbi sodales leo non iaculis pharetra. Mauris lectus justo, volutpat in orci quis, cursus faucibus leo. Morbi et tincidunt ligula, sit amet feugiat leo. Nullam ut nisi id diam facilisis porttitor. Ut sodales auctor neque eget porttitor. Vestibulum fermentum erat at augue dictum sodales. Praesent tempus porta diam eu cursus. Duis eget dui eu justo ullamcorper vulputate. Praesent ornare cursus magna sed imperdiet.</p>
+	<p>Suspendisse gravida, tellus quis rhoncus placerat, ante mauris porttitor augue, sed dignissim ipsum justo interdum massa. Sed vitae mattis ex, in finibus purus. Suspendisse nec dui nulla. Aliquam consequat a diam in tincidunt. Integer ac velit massa. Vestibulum viverra mauris ac nisi semper, sed malesuada eros finibus. Integer eu ornare quam. Integer sit amet lacus eget tortor rutrum blandit nec eget tortor. Sed vestibulum, arcu in semper finibus, ex velit convallis dui, eu fringilla turpis felis a velit. Mauris eu sem pulvinar ante placerat commodo auctor sed diam. Proin non elementum quam, at aliquam lacus. Duis aliquam mi sit amet dui sodales rhoncus. Ut euismod risus eget maximus placerat. Proin sed tincidunt nisl. Nulla sed pulvinar nunc, eu egestas neque.</p>
+	<p>Sed cursus congue neque. Fusce elementum justo sed finibus vestibulum. Aenean eget pharetra purus. Quisque elit mauris, cursus nec elit vitae, luctus tempor nisi. Donec vel elit mi. Mauris nunc risus, dapibus id lacinia nec, faucibus sagittis nibh. Nullam sed elementum tortor.</p>
+	<p>Integer ac mauris et magna mattis mattis. Orci varius natoque penatibus et magnis dis parturient montes, nascetur ridiculus mus. Fusce finibus magna diam, at tincidunt mauris interdum nec. Proin venenatis, felis ac feugiat efficitur, tortor elit auctor velit, sed viverra mauris mi sit amet nisl. Suspendisse malesuada, lorem vitae tristique dapibus, nulla lacus dignissim nibh, ut malesuada erat metus quis sapien. Donec convallis imperdiet diam, eget dignissim mauris congue quis. Praesent nibh turpis, aliquet convallis egestas eget, sodales quis ipsum. Morbi ipsum eros, vestibulum ut diam eu, vulputate ornare justo. Pellentesque quis dictum odio, quis pulvinar sem. Nam nec purus dolor. Curabitur eu sapien nisi. Nam ultricies varius auctor. Pellentesque at vulputate quam, lobortis vulputate libero. Vivamus faucibus augue et dui posuere, vitae aliquam lectus mollis. Nam convallis nulla sit amet mauris dictum venenatis.</p>
+	<p>Donec non lacinia ex. Curabitur sed leo purus. Mauris consequat diam dolor, bibendum fermentum urna suscipit a. Praesent massa augue, luctus condimentum convallis eu, tempus nec magna. Integer imperdiet dui id ultricies dapibus. Aliquam erat volutpat. Praesent purus mauris, facilisis eget dignissim lacinia, euismod ut eros. Phasellus non orci nec mauris accumsan eleifend. Vivamus a risus dictum, ultricies felis id, tincidunt augue. Aenean eu erat ac ipsum dictum eleifend nec non urna. Cras ac lacus ex. Sed auctor augue in tincidunt tristique.</p>
+</panbox-view>
+</body>
+</html>
