@@ -1,0 +1,332 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, minimum-scale=1, initial-scale=1, shrink-to-fit=no">
+<title>fromJSON</title>
+</head>
+<body>
+<p>
+	Check console output.
+</p>
+<p>
+	Legend:
+</p>
+<dl>
+	<dt>
+		<code>data</code>
+	</dt>
+	<dd>
+		Raw data
+	</dd>
+</dl>
+<dl>
+	<dt>
+		<code>json</code>
+	</dt>
+	<dd>
+		JSON stringified raw data
+	</dd>
+</dl>
+<dl>
+	<dt>
+		<code>parsed</code>
+	</dt>
+	<dd>
+		Parsed JSON and post-processed by JSONSchema
+	</dd>
+</dl>
+<script type="module" src="./JSONSchema.js"></script>
+<script>
+
+class File {
+	constructor({ path, mtime }) {
+		this.path = path;
+		this.mtime = mtime;
+	}
+	
+	get name() {
+		return this.path.split('/').pop();
+	}
+	
+	get parentPath() {
+		return this.path.split('/').slice(0, -1).join('/');
+	}
+	
+	static getJSONSchema() {
+		// Use JSON.Schema instead of imported JSONSchema:
+		return JSON.Schema.mix(
+			this,
+			{
+				mtime: Date,
+			}
+		);
+	}
+}
+
+</script>
+<script type="module">
+
+// Following class Directory is not exported to window.*
+class Directory extends File {
+	static fromJSON(data) {
+		return new this({
+			path: data.path,
+			mtime: new Date(data.mtime),
+		});
+	}
+	
+	static getJSONSchema() {
+		return JSONSchema.mix(
+			this,
+			{
+				childDirs: [this],
+				childFiles: [File],
+			}
+		);
+	}
+}
+
+import JSONSchema from './JSONSchema.js';
+
+window.data = window.json = window.schema = null; // declare vars
+
+class TestClass1 {
+	foo;
+	ololo;
+	
+	constructor(foo, ololo) {
+		this.foo = foo;
+		this.ololo = ololo;
+	}
+	
+	static fromJSON(data) {
+		return new this(data.foo, data.ololo);
+	}
+}
+
+class TestClass2 extends TestClass1 {
+	toJSON() {
+		return [this.foo, this.ololo];
+	}
+	
+	static fromJSON(data) {
+		return new this(data[0], data[1]);
+		// another way:
+		return {
+			foo: data[0],
+			ololo: data[1],
+			// extra: data[0] + '-' + data[1],
+		};
+	}
+}
+
+String.prototype.toJSON = function () {
+	const res = { _: this.toString() };
+	let hasProperties = false;
+	for (const name in this) {
+		if (!isNaN(name) && 0 <= name && name < this.length) {
+			// this is an indexed string character, so skip
+			continue;
+		}
+		if (name === 'length' || name === 'toJSON') {
+			continue;
+		}
+		hasProperties = true;
+		res[name] = this[name];
+	}
+	return !hasProperties ? this : res;
+};
+
+String.fromJSON = function (data) {
+	if (typeof data !== 'object') {
+		return new this(data);
+	}
+	const s = data._;
+	delete data._;
+	return new this(s);
+};
+
+//////////////////////////////////////////////
+//////////////////////////////////////////////
+//////////////////////////////////////////////
+
+console.log("Explicit schema object:");
+data = {
+	bool: true,
+	number: 1234,
+	string: 'ololo',
+	String: new String('Mememe'),
+	obj: {
+		date: new Date(),
+		dateAsMillis: Date.now(),
+		bool: false,
+	},
+	array: [1, '2', 3],
+	numArray: [1, 2, 3],
+	tuple: [true, 4321, 'String within tuple', new Date()],
+	rawType: { foo: 'bar', date: new Date() },
+	
+	StringWithProperty: (() => {
+		const res = new String("String with property");
+		res.extraProperty = '1234';
+		return res;
+	})(),
+};
+json = JSON.stringify(data);
+schema = new JSONSchema({
+	bool: 'boolean',
+	number: 'number',
+	string: 'string',
+	String: String,
+	obj: {
+		date: Date,
+		dateAsMillis: Date, // or number?
+		bool: 'boolean',
+	},
+	array: Array,
+	numArray: ['number'],
+	tuple: ['boolean', 'number', 'string', Date],
+	// rawType: undefined,
+	StringWithProperty: JSONSchema.mix(String, {
+		extraProperty: 'any', // convert to boolean
+	}),
+});
+console.log('data', data);
+console.log('json', json);
+console.log('parsed', schema.parse(json));
+console.log(new Array(80).fill('-').join(''));
+
+///////////////////////
+
+console.log("TestClass1:");
+data = new TestClass1('bar', 'mememe');
+json = JSON.stringify(data);
+schema = new JSONSchema(TestClass1);
+console.log('data', data);
+console.log('json', json);
+console.log('parsed', schema.parse(json));
+console.log(new Array(80).fill('-').join(''));
+
+///////////////////////
+
+console.log("TestClass1 with 'extra' property:");
+data = new TestClass1('bar', 'mememe');
+data.extra = {
+	date: new Date(),
+	arr: [1, 2, 3],
+};
+json = JSON.stringify(data);
+schema = new JSONSchema(JSONSchema.mix(
+	TestClass1,
+	{
+		extra: {
+			date: Date,
+			arr: ['string'],
+		},
+	}
+));
+console.log('data', data);
+console.log('json', json);
+console.log('parsed', schema.parse(json));
+console.log(new Array(80).fill('-').join(''));
+
+///////////////////////
+
+console.log("Tuple 1:");
+data = [new Date(), new TestClass2('bar', 'mememe'), 1, '2', new String('3')];
+json = JSON.stringify(data);
+schema = new JSONSchema([
+	Date,
+	TestClass2,
+	'number', // third and everything after - number
+]);
+console.log('data', data);
+console.log('json', json);
+console.log('parsed', schema.parse(json));
+console.log(new Array(80).fill('-').join(''));
+
+///////////////////////
+
+console.log("Tuple 2:");
+data = [1, new Date(), 3, 4, 5, 6, 7, 8, 9];
+json = JSON.stringify(data);
+schema = new JSONSchema([
+	String,
+	Date,
+	Number, // third and everything after - Number
+]);
+console.log('data', data);
+console.log('json', json);
+console.log('parsed', schema.parse(json));
+console.log(new Array(80).fill('-').join(''));
+
+///////////////////////
+
+console.log("Directory and File:");
+data = new Directory({
+	path: '/home/bars/projects/utils/js-json-schema',
+	mtime: new Date('2022-02-02T23:44:00+0300'),
+});
+data.childDirs = [
+	new Directory({
+		path: '/home/bars/projects/utils/js-json-schema/dir-1',
+		mtime: new Date('2022-01-02T23:31:00+0300'),
+	}),
+	new Directory({
+		path: '/home/bars/projects/utils/js-json-schema/dir-2',
+		mtime: new Date('2022-01-02T23:32:00+0300'),
+	}),
+];
+data.childFiles = [
+	new Directory({
+		path: '/home/bars/projects/utils/js-json-schema/JSONSchema.js',
+		mtime: new Date('2022-01-02T23:31:00+0300'),
+	}),
+	new Directory({
+		path: '/home/bars/projects/utils/js-json-schema/demo.html',
+		mtime: new Date('2022-01-03T00:00:00+0300'),
+	}),
+];
+json = JSON.stringify(data);
+const directoryDemoJson = json;
+schema = new JSONSchema(Directory);
+console.log('data', data);
+console.log('json', json);
+console.log('parsed', schema.parse(json));
+console.log(new Array(80).fill('-').join(''));
+
+///////////////////////
+
+console.log("JSONSchema <-> JSON:");
+// Moreover, you can JSON.stringify JSONSchema itself
+// and parse on the other side:
+
+data = schema;
+json = JSON.stringify(data);
+schema = new JSONSchema(JSONSchema);
+
+// You should define a way to resolve constructors
+// from its names:
+JSONSchema.resolveConstructor = (name) => {
+	if (name === 'Directory') {
+		// Since class Directory is not exported to window.*,
+		// we should pass its constructor from current scope
+		return Directory;
+	}
+	return window[name];
+};
+
+console.log('data', data);
+console.log('json', json);
+console.log('parsed', schema.parse(json));
+
+console.log("Directory and File (again):");
+
+schema = schema.parse(json);
+data = schema.parse(directoryDemoJson);
+console.log('parsed', data);
+
+</script>
+</body>
+</html>
