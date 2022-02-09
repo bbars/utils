@@ -14,11 +14,11 @@ type AnyArray = AnyValue[];
 type JSONString = string;
 
 export default class JSONSon {
-	constructor(tree: AllTypes);
+	constructor(type: AllTypes);
 	make(data: AnyObject): AnyValue; 
 	parse(json: JSONString): AnyValue; 
-	static make(tree: AllTypes, data: AnyObject): AnyValue; 
-	static parse(tree: AllTypes, json: JSONString): AnyValue; 
+	static make(type: AllTypes, data: AnyObject): AnyValue; 
+	static parse(type: AllTypes, json: JSONString): AnyValue; 
 	static mix(constructor: Class, propsObject: TypeObject): JSONSonMix;
 }
 

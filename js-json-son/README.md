@@ -28,25 +28,25 @@ let schema = new JSONSon({ ... });
 
 ### Static functions
 
-#### JSONSon.prototype.constructor(tree)
+#### JSONSon.prototype.constructor(type)
 
-Create an instance of JSONSon storing `tree` within private property `this._tree`. This object can be safely converted to a JSON if you want to transfer schema itself: `JSON.stringify(new JSONSon(Boolean))`.
+Create an instance of JSONSon storing `type` within private property `this._type`. This object can be safely converted to a JSON if you want to transfer schema itself: `JSON.stringify(new JSONSon(Boolean))`.
 
 #### JSONSon.prototype.make(data)
 
-Process and convert values of `data` to types according to declarations in `this._tree`.
+Process and convert values of `data` to types according to declarations in `this._type`.
 
 #### JSONSon.prototype.parse(json)
 
 Parse string value `json` and invoke `JSONSon.prototype.make` internally.
 
-#### static JSONSon.make(tree, data)
+#### static JSONSon.make(type, data)
 
-There's no need to instantiate a JSONSon when you dont need it. You can just call this static alternative function to convert values of `data` to types according to declarations in `tree`.
+There's no need to instantiate a JSONSon when you dont need it. You can just call this static alternative function to convert values of `data` to types according to declarations in `type`.
 
-#### static JSONSon.parse(tree, json)
+#### static JSONSon.parse(type, json)
 
-There's no need to instantiate a JSONSon when you dont need it. You can just call this static alternative function to parse `json` and convert its values to types according to declarations in `tree`.
+There's no need to instantiate a JSONSon when you dont need it. You can just call this static alternative function to parse `json` and convert its values to types according to declarations in `type`.
 
 ## Examples
 
@@ -305,7 +305,7 @@ Now it can be thansferred for example from server to client and recomposed to li
 ```js
 JSONSon.parse(JSONSon, json);
 /* Result: JSONSon {
-    _tree: {
+    _type: {
         ...
         ...
         rect: f Object() <-- WAT???
@@ -338,7 +338,7 @@ JSONSon.resolveConstructor = (name) => {
 
 var schema = JSONSon.parse(JSONSon, json);
 /* Result: JSONSon {
-    _tree: {
+    _type: {
         ...
         ...
         rect: class Rect <-- It's okay now

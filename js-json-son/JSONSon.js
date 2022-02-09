@@ -1,10 +1,10 @@
 const _globalThis = typeof globalThis === 'object' ? globalThis : this;
 
 export default class JSONSon {
-	_tree;
+	_type;
 	
-	constructor(tree) {
-		this._tree = tree;
+	constructor(type) {
+		this._type = type;
 	}
 	
 	parse(json) {
@@ -12,57 +12,57 @@ export default class JSONSon {
 	}
 	
 	make(data) {
-		return this.constructor.make(this._tree, data);
+		return this.constructor.make(this._type, data);
 	}
 	
-	static parse(tree, json) {
-		return new this(tree).parse(json);
+	static parse(type, json) {
+		return new this(type).parse(json);
 	}
 	
-	static make(tree, data) {
-		if (typeof tree === 'function' && typeof tree.getJSONSonSchema === 'function') {
-			tree = tree.getJSONSonSchema();
+	static make(type, data) {
+		if (typeof type === 'function' && typeof type.getJSONSonSchema === 'function') {
+			type = type.getJSONSonSchema();
 		}
-		if (tree instanceof JSONSon) {
-			tree = tree._tree;
+		if (type instanceof JSONSon) {
+			type = type._type;
 		}
-		const treeType = typeof tree;
-		if (tree === undefined || tree === 'any') {
+		const typeType = typeof type;
+		if (type === undefined || type === 'any') {
 			return data;
 		}
-		else if (tree === 'string') {
+		else if (type === 'string') {
 			return typeof data === 'undefined' ? '' : '' + data;
 		}
-		else if (tree === 'number') {
+		else if (type === 'number') {
 			return +data;
 		}
-		else if (tree === 'boolean') {
+		else if (type === 'boolean') {
 			return !!(isNaN(data) ? data : +data);
 		}
-		else if (tree === 'bigint') {
+		else if (type === 'bigint') {
 			return BigInt(data);
 		}
-		else if (tree instanceof Array || tree === Array) {
-			const res = tree === Array || tree.constructor === Array
+		else if (type instanceof Array || type === Array) {
+			const res = type === Array || type.constructor === Array
 				? new Array(data ? data.length : 0)
-				: Object.create(tree.prototype)
+				: Object.create(type.prototype)
 			;
 			if (data === undefined) {
 				return res;
 			}
-			return this._fillArray(res, tree, data);
+			return this._fillArray(res, type, data);
 		}
-		else if (treeType === 'function') {
-			return this._instantiate(tree, data);
+		else if (typeType === 'function') {
+			return this._instantiate(type, data);
 		}
-		else if (tree instanceof JSONSonMix) {
-			return tree.make(data);
+		else if (type instanceof JSONSonMix) {
+			return type.make(data);
 		}
-		else if (treeType === 'object') {
-			return this._fillObject({}, tree, data);
+		else if (typeType === 'object') {
+			return this._fillObject({}, type, data);
 		}
 		else {
-			throw new Error(`Unsupported type: '${tree}'`);
+			throw new Error(`Unsupported type: '${type}'`);
 		}
 	}
 	
@@ -84,21 +84,21 @@ export default class JSONSon {
 		return res;
 	}
 	
-	static _fillArray(arr, tree, data) {
+	static _fillArray(arr, type, data) {
 		if (!(data instanceof Array)) {
 			throw new Error("Data should be an array");
 		}
 		let leaf = undefined;
 		for (let i = 0; i < data.length; i++) {
-			if (tree.length > i) {
-				leaf = tree[i];
+			if (type.length > i) {
+				leaf = type[i];
 			}
 			arr[i] = this.make(leaf, data[i]);
 		}
 		return arr;
 	}
 	
-	static _fillObject(obj, tree, data, names) {
+	static _fillObject(obj, type, data, names) {
 		if (typeof data !== 'object') {
 			throw new Error("Data should be an object");
 		}
@@ -106,7 +106,7 @@ export default class JSONSon {
 			names = Object.keys(data);
 		}
 		for (const name of names) {
-			obj[name] = this.make(tree[name], data[name]);
+			obj[name] = this.make(type[name], data[name]);
 		}
 		return obj;
 	}
@@ -152,7 +152,7 @@ export default class JSONSon {
 				return data;
 			}
 		};
-		return converter(this._tree, []);
+		return converter(this._type, []);
 	}
 	
 	static fromJSON(data) {
