@@ -1,17 +1,17 @@
-# JSONSchema
+# JSONSon
 
 Utility lib to convert raw JSON.parse output to declared types.
 
 ## Usage
 
-There are two ways how JSONSchema can be imported and used.
+There are two ways how JSONSon can be imported and used.
 
 Global:
 ```html
-<script type="module" src="./JSONSchema.js"></script>
+<script type="module" src="./JSONSon.js"></script>
 <script>
 
-let schema = new JSON.Schema({ ... });
+let schema = new JSON.Son({ ... });
 
 </script>
 ```
@@ -20,53 +20,53 @@ Within a module:
 ```html
 <script type="module">
 
-import JSONSchema from './JSONSchema.js';
-let schema = new JSONSchema({ ... });
+import JSONSon from './JSONSon.js';
+let schema = new JSONSon({ ... });
 
 </script>
 ```
 
 ### Static functions
 
-#### JSONSchema.prototype.constructor(tree)
+#### JSONSon.prototype.constructor(tree)
 
-Create an instance of JSONSchema storing `tree` within private property `this._tree`. This object can be safely converted to a JSON if you want to transfer schema itself: `JSON.stringify(new JSONSchema(Boolean))`.
+Create an instance of JSONSon storing `tree` within private property `this._tree`. This object can be safely converted to a JSON if you want to transfer schema itself: `JSON.stringify(new JSONSon(Boolean))`.
 
-#### JSONSchema.prototype.make(data)
+#### JSONSon.prototype.make(data)
 
 Process and convert values of `data` to types according to declarations in `this._tree`.
 
-#### JSONSchema.prototype.parse(json)
+#### JSONSon.prototype.parse(json)
 
-Parse string value `json` and invoke `JSONSchema.prototype.make` internally.
+Parse string value `json` and invoke `JSONSon.prototype.make` internally.
 
-#### static JSONSchema.make(tree, data)
+#### static JSONSon.make(tree, data)
 
-There's no need to instantiate a JSONSchema when you dont need it. You can just call this static alternative function to convert values of `data` to types according to declarations in `tree`.
+There's no need to instantiate a JSONSon when you dont need it. You can just call this static alternative function to convert values of `data` to types according to declarations in `tree`.
 
-#### static JSONSchema.parse(tree, json)
+#### static JSONSon.parse(tree, json)
 
-There's no need to instantiate a JSONSchema when you dont need it. You can just call this static alternative function to parse `json` and convert its values to types according to declarations in `tree`.
+There's no need to instantiate a JSONSon when you dont need it. You can just call this static alternative function to parse `json` and convert its values to types according to declarations in `tree`.
 
 ## Examples
 
 ### Primitives
 ```js
-JSONSchema.parse('string', '"foo"');
+JSONSon.parse('string', '"foo"');
 // Result: string primitive "foo" (there's no magic)
 
-new JSONSchema('string').parse('"foo"');
+new JSONSon('string').parse('"foo"');
 // Same as previous
 
-JSONSchema.parse('boolean', '1');
+JSONSon.parse('boolean', '1');
 // Result: boolean true
 // (primitive numeric value 1 converted to boolean true)
 
-JSONSchema.parse('boolean', '"0"');
+JSONSon.parse('boolean', '"0"');
 // Result: boolean false
 // (primitive string value "0" converted to boolean false)
 
-JSONSchema.parse('bigint', '"9007199254740993"');
+JSONSon.parse('bigint', '"9007199254740993"');
 // Result: bigint 9007199254740993n
 // (primitive string value "9007199254740993" converted to bigint)
 ```
@@ -82,22 +82,22 @@ Now bigint values can be safely converted to and from JSON:
 ```js
 JSON.stringify(1234n); // -> "1234"
 JSON.stringify(Object(5678n)); // -> "5678"
-JSONSchema.make('bigint', '9007199254740993'); // -> 9007199254740993n
-var n = JSONSchema.make(BigInt, '9007199254740993'); // -> BigInt {9007199254740993n}
+JSONSon.make('bigint', '9007199254740993'); // -> 9007199254740993n
+var n = JSONSon.make(BigInt, '9007199254740993'); // -> BigInt {9007199254740993n}
 JSON.stringify({ n: n }); // -> { "n": "9007199254740993" }
 ```
 
 ### Arrays
 ```js
-JSONSchema.parse(['string'], '[1, "2", 3]');
+JSONSon.parse(['string'], '[1, "2", 3]');
 // Result: Array ["1", "2", "3"]
 // (all elements of array are primitive strings)
 
-JSONSchema.parse([['number']], '[[1, "2", 3], [4, 5, 6], [7, 8, 9]]'); // 3x3 matrix
+JSONSon.parse([['number']], '[[1, "2", 3], [4, 5, 6], [7, 8, 9]]'); // 3x3 matrix
 // Result: Array [[1, 2, 3], [4, 5, 6], [7, 8, 9]]
 // (all elements of nested arrays are primitive numbers)
 
-JSONSchema.parse({ 2: 'string' }, '[0, "1", 2]');
+JSONSon.parse({ 2: 'string' }, '[0, "1", 2]');
 // Result: Object { 0: 0, 1: '1', 2: '2' }
 // (array converted to an object;
 // value of prop '2' converted to string,
@@ -106,7 +106,7 @@ JSONSchema.parse({ 2: 'string' }, '[0, "1", 2]');
 
 ### Objects
 ```js
-var schema = new JSONSchema({
+var schema = new JSONSon({
     str: 'string',
     num: 'number',
     bool: 'boolean',
@@ -145,7 +145,7 @@ schema.make({
 
 ### Tuples
 ```js
-var schema = new JSONSchema([
+var schema = new JSONSon([
     'string',
     'boolean',
     'number',
@@ -183,7 +183,7 @@ class Point {
     }
     
     /**
-     * Magic method, called by JSONSchema
+     * Magic method, called by JSONSon
      */
     static fromJSON(data) {
         // assuming, that data is array [x, y]
@@ -196,7 +196,7 @@ import { Point } from 'some-geometry-library';
 
 var point = new Point(4, 9); // Point { x: 4, y: 9 }
 var json = JSON.stringify(point); // [4, 9]
-var schema = new JSONSchema(Point);
+var schema = new JSONSon(Point);
 schema.parse(json);
 /* Result: Point {
     x: 4,
@@ -206,7 +206,7 @@ schema.parse(json);
 
 #### Class with extra properties
 
-If the object is an instance of known class, but has extra properties, you can use JSONSchema.mix:
+If the object is an instance of known class, but has extra properties, you can use JSONSon.mix:
 ```js
 // some-geometry-library.js
 class Rect {
@@ -216,7 +216,7 @@ class Rect {
     }
     
     static fromJSON(data) {
-        return new this(JSONSchema.make(Point, data.p0), JSONSchema.make(Point, data.p1));
+        return new this(JSONSon.make(Point, data.p0), JSONSon.make(Point, data.p1));
     }
 }
 
@@ -229,10 +229,10 @@ rect.clickable = true;
 
 var json = JSON.stringify(rect); // {"p0": [0,0], "p1": [5,6], "clickable": true}
 
-JSONSchema.parse(Rect, json); // property 'clickable' is lost :(
+JSONSon.parse(Rect, json); // property 'clickable' is lost :(
 
 // But...
-var schema = new JSONSchema(JSONSchema.mix(Rect, {
+var schema = new JSONSon(JSONSon.mix(Rect, {
     clickable: 'boolean', // declare extra property
 }));
 schema.parse(json);
@@ -249,14 +249,14 @@ schema.parse(json);
 } */
 ```
 
-## Stringify JSONSchema itself
+## Stringify JSONSon itself
 
-JSONSchema class can be safely stringified as JSON:
+JSONSon class can be safely stringified as JSON:
 
 ```js
 import { Rect } from 'some-geometry-library';
 
-var schema = new JSONSchema({
+var schema = new JSONSon({
     str: 'string',
     arr: ['number'],
     foo: {
@@ -300,11 +300,11 @@ var json = JSON.stringify(schema, null, '  ');
 }` */
 ```
 
-Now it can be thansferred for example from server to client and recomposed to live JSONSchema:
+Now it can be thansferred for example from server to client and recomposed to live JSONSon:
 
 ```js
-JSONSchema.parse(JSONSchema, json);
-/* Result: JSONSchema {
+JSONSon.parse(JSONSon, json);
+/* Result: JSONSon {
     _tree: {
         ...
         ...
@@ -313,16 +313,16 @@ JSONSchema.parse(JSONSchema, json);
 } */
 ```
 
-Type of property 'rect' is wrong now. That's because the other environment doesn't know a custom class named 'Rect'. But there's a workaround. The one should re-implement static method `JSONSchema.resolveConstructor`.
+Type of property 'rect' is wrong now. That's because the other environment doesn't know a custom class named 'Rect'. But there's a workaround. The one should re-implement static method `JSONSon.resolveConstructor`.
 
-### Implement custom JSONSchema.resolveConstructor
+### Implement custom JSONSon.resolveConstructor
 
 ```js
 import { Point, Rect } from 'some-geometry-library';
 
 // You should define a way to resolve constructors
 // from its names:
-JSONSchema.resolveConstructor = (name) => {
+JSONSon.resolveConstructor = (name) => {
     if (name === 'Point') {
         // Since class Point is not exported to window.*,
         // we should pass its constructor from current scope
@@ -336,8 +336,8 @@ JSONSchema.resolveConstructor = (name) => {
     return window[name];
 };
 
-var schema = JSONSchema.parse(JSONSchema, json);
-/* Result: JSONSchema {
+var schema = JSONSon.parse(JSONSon, json);
+/* Result: JSONSon {
     _tree: {
         ...
         ...
@@ -358,9 +358,9 @@ var res = schema.parse('{ ... "rect": { "p0": [0,0], "p1": [5,6] } }');
 } */
 ```
 
-### Implement magic static method CustomClass.getJSONSchema
+### Implement magic static method CustomClass.getJSONSonSchema
 
-It is possible to over-declare schema of specific class. For example, you can declare a JSONSchema.mix:
+It is possible to over-declare schema of specific class. For example, you can declare a JSONSon.mix:
 
 ```js
 // some-geometry-library.js
@@ -371,11 +371,11 @@ class Rect {
     }
     
     static fromJSON(data) {
-        return new this(JSONSchema.make(Point, data.p0), JSONSchema.make(Point, data.p1));
+        return new this(JSONSon.make(Point, data.p0), JSONSon.make(Point, data.p1));
     }
     
-    static getJSONSchema() {
-        return JSONSchema.mix(this, {
+    static getJSONSonSchema() {
+        return JSONSon.mix(this, {
             clickable: 'boolean', // declare extra property
         });
     }
@@ -385,8 +385,8 @@ class Rect {
 
 import { Rect, Point } from 'some-geometry-library';
 
-// There's no need to declare JSONSchema.mix outside anymore:
-var schema = new JSONSchema(Rect);
+// There's no need to declare JSONSon.mix outside anymore:
+var schema = new JSONSon(Rect);
 
 var rect = new Rect(new Point(0, 0), new Point(5, 6));
 // define extra property:
@@ -414,14 +414,14 @@ Another example (don't do it IRL): you can make all instances of Number to be co
 var json = JSON.stringify(1234); // string '1234'
 var parsedRaw = JSON.parse(json); // number 1234
 
-JSONSchema.parse(Number, json);
+JSONSon.parse(Number, json);
 // Result: Number {1234}
 
-Number.getJSONSchema = () => 'number'; // the magic is here
+Number.getJSONSonSchema = () => 'number'; // the magic is here
 
-JSONSchema.parse(Number, json);
+JSONSon.parse(Number, json);
 // Result: number 1234
-// (because JSONSchema has called Number.getJSONSchema
+// (because JSONSon has called Number.getJSONSonSchema
 // and got updated schema for an instance:
 // primitive number instead of Number class)
 ```

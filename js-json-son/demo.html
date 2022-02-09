@@ -33,10 +33,10 @@
 		<code>parsed</code>
 	</dt>
 	<dd>
-		Parsed JSON and post-processed by JSONSchema
+		Parsed JSON and post-processed by JSONSon
 	</dd>
 </dl>
-<script type="module" src="./JSONSchema.js"></script>
+<script type="module" src="./JSONSon.js"></script>
 <script>
 
 class File {
@@ -53,9 +53,9 @@ class File {
 		return this.path.split('/').slice(0, -1).join('/');
 	}
 	
-	static getJSONSchema() {
-		// Use JSON.Schema instead of imported JSONSchema:
-		return JSON.Schema.mix(
+	static getJSONSonSchema() {
+		// Use JSON.Son instead of imported JSONSon:
+		return JSON.Son.mix(
 			this,
 			{
 				mtime: Date,
@@ -76,8 +76,8 @@ class Directory extends File {
 		});
 	}
 	
-	static getJSONSchema() {
-		return JSONSchema.mix(
+	static getJSONSonSchema() {
+		return JSONSon.mix(
 			this,
 			{
 				childDirs: [this],
@@ -87,7 +87,7 @@ class Directory extends File {
 	}
 }
 
-import JSONSchema from './JSONSchema.js';
+import JSONSon from './JSONSon.js';
 
 window.data = window.json = window.schema = null; // declare vars
 
@@ -174,7 +174,7 @@ data = {
 	})(),
 };
 json = JSON.stringify(data);
-schema = new JSONSchema({
+schema = new JSONSon({
 	bool: 'boolean',
 	number: 'number',
 	string: 'string',
@@ -188,7 +188,7 @@ schema = new JSONSchema({
 	numArray: ['number'],
 	tuple: ['boolean', 'number', 'string', Date],
 	// rawType: undefined,
-	StringWithProperty: JSONSchema.mix(String, {
+	StringWithProperty: JSONSon.mix(String, {
 		extraProperty: 'any', // convert to boolean
 	}),
 });
@@ -202,7 +202,7 @@ console.log(new Array(80).fill('-').join(''));
 console.log("TestClass1:");
 data = new TestClass1('bar', 'mememe');
 json = JSON.stringify(data);
-schema = new JSONSchema(TestClass1);
+schema = new JSONSon(TestClass1);
 console.log('data', data);
 console.log('json', json);
 console.log('parsed', schema.parse(json));
@@ -217,7 +217,7 @@ data.extra = {
 	arr: [1, 2, 3],
 };
 json = JSON.stringify(data);
-schema = new JSONSchema(JSONSchema.mix(
+schema = new JSONSon(JSONSon.mix(
 	TestClass1,
 	{
 		extra: {
@@ -236,7 +236,7 @@ console.log(new Array(80).fill('-').join(''));
 console.log("Tuple 1:");
 data = [new Date(), new TestClass2('bar', 'mememe'), 1, '2', new String('3')];
 json = JSON.stringify(data);
-schema = new JSONSchema([
+schema = new JSONSon([
 	Date,
 	TestClass2,
 	'number', // third and everything after - number
@@ -251,7 +251,7 @@ console.log(new Array(80).fill('-').join(''));
 console.log("Tuple 2:");
 data = [1, new Date(), 3, 4, 5, 6, 7, 8, 9];
 json = JSON.stringify(data);
-schema = new JSONSchema([
+schema = new JSONSon([
 	String,
 	Date,
 	Number, // third and everything after - Number
@@ -265,32 +265,32 @@ console.log(new Array(80).fill('-').join(''));
 
 console.log("Directory and File:");
 data = new Directory({
-	path: '/home/bars/projects/utils/js-json-schema',
+	path: '/home/bars/projects/utils/js-json-son',
 	mtime: new Date('2022-02-02T23:44:00+0300'),
 });
 data.childDirs = [
 	new Directory({
-		path: '/home/bars/projects/utils/js-json-schema/dir-1',
+		path: '/home/bars/projects/utils/js-json-son/dir-1',
 		mtime: new Date('2022-01-02T23:31:00+0300'),
 	}),
 	new Directory({
-		path: '/home/bars/projects/utils/js-json-schema/dir-2',
+		path: '/home/bars/projects/utils/js-json-son/dir-2',
 		mtime: new Date('2022-01-02T23:32:00+0300'),
 	}),
 ];
 data.childFiles = [
 	new Directory({
-		path: '/home/bars/projects/utils/js-json-schema/JSONSchema.js',
+		path: '/home/bars/projects/utils/js-json-son/JSONSon.js',
 		mtime: new Date('2022-01-02T23:31:00+0300'),
 	}),
 	new Directory({
-		path: '/home/bars/projects/utils/js-json-schema/demo.html',
+		path: '/home/bars/projects/utils/js-json-son/demo.html',
 		mtime: new Date('2022-01-03T00:00:00+0300'),
 	}),
 ];
 json = JSON.stringify(data);
 const directoryDemoJson = json;
-schema = new JSONSchema(Directory);
+schema = new JSONSon(Directory);
 console.log('data', data);
 console.log('json', json);
 console.log('parsed', schema.parse(json));
@@ -298,17 +298,17 @@ console.log(new Array(80).fill('-').join(''));
 
 ///////////////////////
 
-console.log("JSONSchema <-> JSON:");
-// Moreover, you can JSON.stringify JSONSchema itself
+console.log("JSONSon <-> JSON:");
+// Moreover, you can JSON.stringify JSONSon itself
 // and parse on the other side:
 
 data = schema;
 json = JSON.stringify(data);
-schema = new JSONSchema(JSONSchema);
+schema = new JSONSon(JSONSon);
 
 // You should define a way to resolve constructors
 // from its names:
-JSONSchema.resolveConstructor = (name) => {
+JSONSon.resolveConstructor = (name) => {
 	if (name === 'Directory') {
 		// Since class Directory is not exported to window.*,
 		// we should pass its constructor from current scope

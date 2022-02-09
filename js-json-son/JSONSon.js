@@ -1,6 +1,6 @@
 const _globalThis = typeof globalThis === 'object' ? globalThis : this;
 
-export default class JSONSchema {
+export default class JSONSon {
 	_tree;
 	
 	constructor(tree) {
@@ -20,10 +20,10 @@ export default class JSONSchema {
 	}
 	
 	static make(tree, data) {
-		if (typeof tree === 'function' && typeof tree.getJSONSchema === 'function') {
-			tree = tree.getJSONSchema();
+		if (typeof tree === 'function' && typeof tree.getJSONSonSchema === 'function') {
+			tree = tree.getJSONSonSchema();
 		}
-		if (tree instanceof JSONSchema) {
+		if (tree instanceof JSONSon) {
 			tree = tree._tree;
 		}
 		const treeType = typeof tree;
@@ -55,7 +55,7 @@ export default class JSONSchema {
 		else if (treeType === 'function') {
 			return this._instantiate(tree, data);
 		}
-		else if (tree instanceof JSONSchemaMix) {
+		else if (tree instanceof JSONSonMix) {
 			return tree.make(data);
 		}
 		else if (treeType === 'object') {
@@ -112,7 +112,7 @@ export default class JSONSchema {
 	}
 	
 	static mix(constructor, propsObject) {
-		return new JSONSchemaMix(constructor, propsObject);
+		return new JSONSonMix(constructor, propsObject);
 	}
 	
 	toJSON() {
@@ -123,7 +123,7 @@ export default class JSONSchema {
 					name: data.name,
 				};
 			}
-			else if (data instanceof JSONSchemaMix) {
+			else if (data instanceof JSONSonMix) {
 				return {
 					type: 'mix',
 					name: data.underlyingConstructor.name,
@@ -173,7 +173,7 @@ export default class JSONSchema {
 			else if (data.type === 'mix') {
 				const underlyingConstructor = this.resolveConstructor(data.name) || Object;
 				const propsObject = converter(data.propsObject, path.concat(['propsObject']));
-				return new JSONSchemaMix(underlyingConstructor, propsObject);
+				return new JSONSonMix(underlyingConstructor, propsObject);
 			}
 			else if (data.type === 'object') {
 				const constructor = this.resolveConstructor(data.name) || Object;
@@ -195,7 +195,7 @@ export default class JSONSchema {
 	}
 }
 
-class JSONSchemaMix {
+class JSONSonMix {
 	underlyingConstructor;
 	propsObject;
 	
@@ -205,7 +205,7 @@ class JSONSchemaMix {
 	}
 	
 	make(data) {
-		const res = JSONSchema._instantiate(this.underlyingConstructor, data);
+		const res = JSONSon._instantiate(this.underlyingConstructor, data);
 		if (res == null) {
 			return res;
 		}
@@ -213,9 +213,9 @@ class JSONSchemaMix {
 			? undefined
 			: Object.keys(this.propsObject)
 		;
-		JSONSchema._fillObject(res, this.propsObject, data, names);
+		JSONSon._fillObject(res, this.propsObject, data, names);
 		return res;
 	}
 }
 
-JSON.Schema = JSONSchema;
+JSON.Son = JSONSon;
