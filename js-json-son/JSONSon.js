@@ -55,7 +55,7 @@ export default class JSONSon {
 		else if (typeType === 'function') {
 			return this._instantiate(type, data);
 		}
-		else if (type instanceof JSONSonMix) {
+		else if (type instanceof JSONSonInternal) {
 			return type.make(data);
 		}
 		else if (typeType === 'object') {
@@ -66,8 +66,8 @@ export default class JSONSon {
 		}
 	}
 	
-	static _instantiate(constructor, data) {
-		if (data == null) {
+	static _instantiate(constructor, data, force) {
+		if (data == null && !force) {
 			return data;
 		}
 		if (constructor === BigInt) {
@@ -115,19 +115,16 @@ export default class JSONSon {
 		return new JSONSonMix(constructor, propsObject);
 	}
 	
+	static enum(...supportedValues) {
+		return new JSONSonEnum(...supportedValues);
+	}
+	
 	toJSON() {
 		const converter = (data, path) => {
 			if (typeof data === 'function') {
 				return {
 					type: 'constructor',
 					name: data.name,
-				};
-			}
-			else if (data instanceof JSONSonMix) {
-				return {
-					type: 'mix',
-					name: data.underlyingConstructor.name,
-					propsObject: converter(data.propsObject, path.concat(['propsObject'])),
 				};
 			}
 			else if (data instanceof Array) {
@@ -137,6 +134,13 @@ export default class JSONSon {
 				}
 				return res;
 			}
+			else if (data instanceof JSONSonInternal) {
+				return {
+					type: 'internal',
+					name: data.constructor.name,
+					value: data,
+				};
+			}
 			else if (typeof data === 'object' && data !== null) {
 				const value = {};
 				for (const k in data) {
@@ -144,7 +148,7 @@ export default class JSONSon {
 				}
 				return {
 					type: 'object',
-					name: data.constructor.name,
+					name: data.constructor.name !== 'Object' ? data.constructor.name : undefined,
 					value: value,
 				};
 			}
@@ -168,16 +172,22 @@ export default class JSONSon {
 				return res;
 			}
 			else if (data.type === 'constructor') {
-				return this.resolveConstructor(data.name) || Object;
+				const res = this.resolveConstructor(data.name);
+				if (!res) {
+					throw new Error(`Unable to resolve constructor '${data.name}'`);
+				}
+				return res;
 			}
-			else if (data.type === 'mix') {
-				const underlyingConstructor = this.resolveConstructor(data.name) || Object;
-				const propsObject = converter(data.propsObject, path.concat(['propsObject']));
-				return new JSONSonMix(underlyingConstructor, propsObject);
+			else if (data.type === 'internal') {
+				const constructor = JSONSonInternal.implementations[data.name];
+				if (!constructor) {
+					throw new Error(`Unknown type: '${data.name}'. Please check if you are using compatible JSONSon version`);
+				}
+				return this._instantiate(constructor, data.value);
 			}
 			else if (data.type === 'object') {
-				const constructor = this.resolveConstructor(data.name) || Object;
-				const res = constructor === Array ? [] : Object.create(data.constructor.prototype);
+				const constructor = this.resolveConstructor(data.name || 'Object') || Object;
+				const res = constructor === Array ? [] : Object.create(constructor.prototype);
 				for (const k in data.value) {
 					res[k] = converter(data.value[k], path.concat(['value', k]));
 				}
@@ -195,11 +205,16 @@ export default class JSONSon {
 	}
 }
 
-class JSONSonMix {
+class JSONSonInternal {
+	static implementations = {};
+}
+
+class JSONSonMix extends JSONSonInternal {
 	underlyingConstructor;
 	propsObject;
 	
 	constructor(underlyingConstructor, propsObject) {
+		super();
 		this.underlyingConstructor = underlyingConstructor;
 		this.propsObject = propsObject;
 	}
@@ -216,6 +231,50 @@ class JSONSonMix {
 		JSONSon._fillObject(res, this.propsObject, data, names);
 		return res;
 	}
+	
+	toJSON() {
+		return {
+			underlyingConstructor: this.underlyingConstructor.name,
+			propsObject: new JSONSon(this.propsObject),
+		};
+	}
+	
+	static fromJSON(data) {
+		const underlyingConstructor = JSONSon.resolveConstructor(data.underlyingConstructor);
+		if (!underlyingConstructor) {
+			throw new Error(`Unable to resolve constructor '${data.underlyingConstructor}'`);
+		}
+		const propsObject = JSONSon.fromJSON(data.propsObject)._type;
+		return new this(underlyingConstructor, propsObject);
+	}
 }
+JSONSonInternal.implementations['JSONSonMix'] = JSONSonMix;
+
+class JSONSonEnum extends JSONSonInternal {
+	supportedValues = new Set();
+	
+	constructor(...supportedValues) {
+		super();
+		supportedValues.forEach((v) => this.supportedValues.add(v));
+	}
+	
+	make(data) {
+		if (!this.supportedValues.has(data)) {
+			throw new Error(`Unknown enum value: ${data}`);
+		}
+		return data;
+	}
+	
+	toJSON() {
+		return {
+			supportedValues: Array.from(this.supportedValues),
+		};
+	}
+	
+	static fromJSON(data) {
+		return new this(...data.supportedValues);
+	}
+}
+JSONSonInternal.implementations['JSONSonEnum'] = JSONSonEnum;
 
 JSON.Son = JSONSon;

@@ -425,3 +425,7 @@ JSONSon.parse(Number, json);
 // and got updated schema for an instance:
 // primitive number instead of Number class)
 ```
+
+## Known issues
+
+- When some class overrides its schema with `getJSONSonSchema`, it ignored within mix

@@ -39,7 +39,7 @@
 <script type="module" src="./JSONSon.js"></script>
 <script>
 
-class File {
+class FileInfo {
 	constructor({ path, mtime }) {
 		this.path = path;
 		this.mtime = mtime;
@@ -63,12 +63,13 @@ class File {
 		);
 	}
 }
+window.FileInfo = FileInfo;
 
 </script>
 <script type="module">
 
-// Following class Directory is not exported to window.*
-class Directory extends File {
+// Following class is not exported to window.*
+class DirectoryInfo extends FileInfo {
 	static fromJSON(data) {
 		return new this({
 			path: data.path,
@@ -81,7 +82,7 @@ class Directory extends File {
 			this,
 			{
 				childDirs: [this],
-				childFiles: [File],
+				childFiles: [FileInfo],
 			}
 		);
 	}
@@ -90,6 +91,7 @@ class Directory extends File {
 import JSONSon from './JSONSon.js';
 
 window.data = window.json = window.schema = null; // declare vars
+window.JSONSon = JSONSon;
 
 class TestClass1 {
 	foo;
@@ -264,33 +266,56 @@ console.log(new Array(80).fill('-').join(''));
 ///////////////////////
 
 console.log("Directory and File:");
-data = new Directory({
+let directory = new DirectoryInfo({
 	path: '/home/bars/projects/utils/js-json-son',
 	mtime: new Date('2022-02-02T23:44:00+0300'),
 });
-data.childDirs = [
-	new Directory({
+directory.childDirs = [
+	new DirectoryInfo({
 		path: '/home/bars/projects/utils/js-json-son/dir-1',
 		mtime: new Date('2022-01-02T23:31:00+0300'),
 	}),
-	new Directory({
+	new DirectoryInfo({
 		path: '/home/bars/projects/utils/js-json-son/dir-2',
 		mtime: new Date('2022-01-02T23:32:00+0300'),
 	}),
 ];
-data.childFiles = [
-	new Directory({
+directory.childFiles = [
+	new DirectoryInfo({
 		path: '/home/bars/projects/utils/js-json-son/JSONSon.js',
 		mtime: new Date('2022-01-02T23:31:00+0300'),
 	}),
-	new Directory({
+	new DirectoryInfo({
 		path: '/home/bars/projects/utils/js-json-son/demo.html',
 		mtime: new Date('2022-01-03T00:00:00+0300'),
 	}),
 ];
+
+data = directory;
 json = JSON.stringify(data);
 const directoryDemoJson = json;
-schema = new JSONSon(Directory);
+schema = new JSONSon(DirectoryInfo);
+console.log('data', data);
+console.log('json', json);
+console.log('parsed', schema.parse(json));
+console.log(new Array(80).fill('-').join(''));
+
+///////////////////////
+
+console.log("Nested JSONSon.mix:");
+
+let file = new FileInfo({
+	path: './README.md',
+	mtime: new Date(),
+});
+file.mimeType = 'text/markdown';
+
+data = file;
+json = JSON.stringify(data);
+schema = new JSONSon(JSONSon.mix(FileInfo, {
+	mimeType: 'string',
+}));
+
 console.log('data', data);
 console.log('json', json);
 console.log('parsed', schema.parse(json));
@@ -302,30 +327,61 @@ console.log("JSONSon <-> JSON:");
 // Moreover, you can JSON.stringify JSONSon itself
 // and parse on the other side:
 
-data = schema;
-json = JSON.stringify(data);
-schema = new JSONSon(JSONSon);
-
 // You should define a way to resolve constructors
 // from its names:
 JSONSon.resolveConstructor = (name) => {
-	if (name === 'Directory') {
-		// Since class Directory is not exported to window.*,
+	if (name === 'DirectoryInfo') {
+		// Since class DirectoryInfo is not exported to window.*,
 		// we should pass its constructor from current scope
-		return Directory;
+		return DirectoryInfo;
 	}
 	return window[name];
 };
 
+schema = new JSONSon({
+	str: 'string',
+	arr: ['number'],
+	foo: {
+		bar: 'string',
+	},
+	StringObject: String,
+	BigIntObject: BigInt,
+	DirectoryInfo: DirectoryInfo,
+	
+	mix: JSONSon.mix(FileInfo, { mimeType: 'string' }),
+	enum: JSONSon.enum('f', 'm'),
+});
+console.log('schema', schema);
+debugger;
+let schemaJson = JSON.stringify(schema);
+console.log('schemaJson', schemaJson);
+schema = JSONSon.parse(JSONSon, schemaJson);
+console.log('schema parsed', schema);
+
+BigInt.prototype.toJSON = function () {
+	return this.toString(10);
+};
+
+data = {
+	str: "Here's a string",
+	arr: [null, true, 2, '3', 4n, 5, new Number(6)],
+	foo: {
+		bar: 'baz',
+	},
+	StringObject: new String("Here's a string object"),
+	BigIntObject: Object(BigInt(9007199254740993n)),
+	DirectoryInfo: directory,
+	
+	mix: file,
+	enum: 'm',
+};
+json = JSON.stringify(data);
+
+schema = JSONSon.parse(JSONSon, schemaJson);
+
 console.log('data', data);
 console.log('json', json);
 console.log('parsed', schema.parse(json));
-
-console.log("Directory and File (again):");
-
-schema = schema.parse(json);
-data = schema.parse(directoryDemoJson);
-console.log('parsed', data);
 
 </script>
 </body>
