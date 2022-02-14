@@ -310,6 +310,7 @@ InspectValue: {
 		}
 		set value(value) {
 			this[KEY_VALUE] = value;
+			this.expanded = false;
 			this.render();
 		}
 		
