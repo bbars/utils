@@ -1,6 +1,7 @@
 common: {
 	const KEY_PROPERTY_NAME = Symbol('propertyName');
 	const KEY_VALUE = Symbol('value');
+	const KEY_LISTENERS = Symbol('listeners');
 	
 	const KEY_CHILDREN_RENDERED_LEVEL = Symbol('childrenRenderedLevel');
 	const KEY_IGNORE_ATTRIBUTE_CHANGES = Symbol('ignoreAttributeChanges');
@@ -12,6 +13,41 @@ common: {
 			const getter = () => fn.call(thisArg);
 			Object.setPrototypeOf(getter, Getter.prototype);
 			return getter;
+		}
+	}
+	
+	class ValueWrapper {
+		constructor(value) {
+			this[KEY_LISTENERS] = new Set();
+			if (arguments.length > 0) {
+				this.set(value);
+			}
+		}
+		
+		addListener(listener) {
+			this[KEY_LISTENERS].add(listener);
+			return this;
+		}
+		
+		removeListener(listener) {
+			this[KEY_LISTENERS].delete(listener);
+			return this;
+		}
+		
+		get() {
+			return this[KEY_VALUE];
+		}
+		set(value) {
+			this[KEY_VALUE] = value;
+			for (const listener of this[KEY_LISTENERS]) {
+				try {
+					listener(value, this);
+				}
+				catch (err) {
+					console.warn(err);
+				}
+			}
+			return this[KEY_VALUE];
 		}
 	}
 	
@@ -507,6 +543,7 @@ common: {
 					}
 					this.evaluateGetter();
 				});
+				this.$$onValueWrapperChange = this.$$onValueWrapperChange.bind(this);
 			}
 			
 			static create(value) {
@@ -516,10 +553,19 @@ common: {
 			}
 			
 			get value() {
-				return this[KEY_VALUE];
+				return this[KEY_VALUE] instanceof ValueWrapper
+					? this[KEY_VALUE].get()
+					: this[KEY_VALUE]
+				;
 			}
 			set value(value) {
+				if (this[KEY_VALUE] instanceof ValueWrapper) {
+					this[KEY_VALUE].removeListener(this.$$onValueWrapperChange);
+				}
 				this[KEY_VALUE] = value;
+				if (value instanceof ValueWrapper) {
+					value.addListener(this.$$onValueWrapperChange);
+				}
 				this.expanded = false;
 				this.render();
 			}
@@ -636,8 +682,8 @@ common: {
 			
 			render() {
 				delete this[KEY_CHILDREN_RENDERED_LEVEL];
-				while (this.children[0]) {
-					this.removeChild(this.children[0]);
+				while (this.childNodes[0]) {
+					this.removeChild(this.childNodes[0]);
 				}
 				const value = this.value;
 				const ivType = this.constructor.getIvType(value);
@@ -740,6 +786,10 @@ common: {
 						? Infinity
 						: (this[KEY_CHILDREN_RENDERED_LEVEL] || 9) + 1
 				);
+			}
+			
+			$$onValueWrapperChange(value, valueWrapper) {
+				this.render();
 			}
 			
 			static _generateValueView(value, ivType) {
@@ -882,11 +932,36 @@ common: {
 						value: new InfoText(obj0.toString()),
 					};
 				}
+				else if (obj0 instanceof Promise) {
+					const done = new ValueWrapper();
+					const res = new ValueWrapper();
+					const err = new ValueWrapper();
+					yield {
+						name: 'Done',
+						virtual: true,
+						unhide: true,
+						value: done,
+					};
+					yield {
+						name: 'Result',
+						virtual: true,
+						unhide: true,
+						value: res,
+					};
+					yield {
+						name: 'Error',
+						virtual: true,
+						unhide: true,
+						value: err,
+					};
+					obj0.then(res.set.bind(res), err.set.bind(err)).finally(() => done.set(true));
+				}
 			}
 		}
 		
 		InspectValue.InfoText = InfoText;
 		InspectValue.Getter = Getter;
+		InspectValue.ValueWrapper = ValueWrapper;
 		window.InspectValue = InspectValue;
 		window.customElements.define('inspect-value', InspectValue);
 	}

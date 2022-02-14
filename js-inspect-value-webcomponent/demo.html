@@ -14,6 +14,9 @@ inspect-value {
 </style>
 </head>
 <body>
+<inspect-value-property>
+    Ololo<inspect-value slot="value">Mememe</inspect-value>
+</inspect-value-property>
 <script type="text/javascript">
 
 document.body.appendChild(InspectValue.create());
@@ -82,9 +85,36 @@ let recursiveGetter = new InspectValue.Getter(recursiveGetterFunction);
 document.body.appendChild(InspectValue.create(recursiveGetterFunction));
 document.body.appendChild(InspectValueProperty.create(recursiveGetter, 'recursive inline getter'));
 
+let valueWrapper = new InspectValue.ValueWrapper(0);
+document.body.appendChild(InspectValue.create(valueWrapper));
+valueWrapper._tmr = setInterval(() => { valueWrapper.set(valueWrapper.get() + 1) }, 1000);
+
+(async () => {
+    let asyncFunction = async (a) => {
+        await new Promise(resolve => setTimeout(resolve, 5000));
+        a = await a;
+        if (isNaN(a)) {
+            throw new Error(`Argument 'a' is NaN`);
+        }
+        return a + 1
+    };
+    document.body.appendChild(InspectValue.create(asyncFunction));
+    
+    const prom0 = asyncFunction(0);
+    document.body.appendChild(InspectValue.create(prom0));
+    
+    const prom1 = asyncFunction(asyncFunction(0));
+    document.body.appendChild(InspectValue.create(prom1));
+    const res1 = await prom1;
+    document.body.appendChild(InspectValue.create(res1));
+    
+    const prom2 = asyncFunction(NaN);
+    document.body.appendChild(InspectValue.create(prom2));
+    const res2 = await prom2;
+    document.body.appendChild(InspectValue.create(res2));
+})();
+
+
 </script>
-<inspect-value-property>
-    Ololo<inspect-value slot="value">Mememe</inspect-value>
-</inspect-value-property>
 </body>
 </html>
