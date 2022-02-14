@@ -70,6 +70,18 @@ catch (err) {
     document.body.appendChild(new InspectValue(err));
 }
 
+document.body.appendChild(new InspectValueProperty(new InspectValue.Getter(() => {
+    return new InspectValue.InfoText(`You've clicked it`);
+}), 'inline getter'));
+
+let recursiveGetterFunction = () => {
+    alert(`Returning same getter as a result`);
+    return recursiveGetter;
+};
+let recursiveGetter = new InspectValue.Getter(recursiveGetterFunction);
+document.body.appendChild(new InspectValue(recursiveGetterFunction));
+document.body.appendChild(new InspectValueProperty(recursiveGetter, 'recursive inline getter'));
+
 </script>
 </body>
 </html>

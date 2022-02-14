@@ -8,8 +8,8 @@ common: {
 	class InfoText extends String {}
 	
 	class Getter extends Function {
-		constructor(obj, fn) {
-			const getter = () => fn.call(obj);
+		constructor(fn, thisArg) {
+			const getter = () => fn.call(thisArg);
 			Object.setPrototypeOf(getter, Getter.prototype);
 			return getter;
 		}
@@ -183,7 +183,7 @@ common: {
 			
 			static fromDescriptor(descriptor, parentValue) {
 				const value = typeof descriptor.get === 'function'
-					? new Getter(parentValue, descriptor.get)
+					? new Getter(descriptor.get, parentValue)
 					: descriptor.value
 				;
 				const args = [value];
@@ -877,6 +877,8 @@ common: {
 			}
 		}
 		
+		InspectValue.InfoText = InfoText;
+		InspectValue.Getter = Getter;
 		window.InspectValue = InspectValue;
 		window.customElements.define('inspect-value', InspectValue);
 	}
