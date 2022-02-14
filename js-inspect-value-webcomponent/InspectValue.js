@@ -104,8 +104,9 @@ InspectValue: {
 			--color-class: #42d;
 			--color-function: inherit;
 			--color-object: inherit;
+			--color-error: #c60;
 			--color-infotext: #888;
-			--color-getter: #990;
+			--color-getter: #f0d;
 			--content-getter: '(get)';
 			--content-more: '\\2219\\2219\\2219';
 		}
@@ -125,7 +126,6 @@ InspectValue: {
 			height: 1em;
 			text-align: center;
 			margin-right: 0.15em;
-			color: #444;
 			transform-origin: 65% 65%;
 			transition: transform 100ms ease;
 			transform: translate(0%, -25%) rotate(-45deg);
@@ -205,6 +205,10 @@ InspectValue: {
 		}
 		:host #elWrapper[iv-i-type="object"] #elContents > slot {
 			color: var(--color-object);
+			font-style: italic;
+		}
+		:host #elWrapper[iv-i-type="error"] #elContents > slot {
+			color: var(--color-error);
 			font-style: italic;
 		}
 		:host #elWrapper[iv-i-type="infotext"] #elContents > slot {
@@ -407,6 +411,9 @@ InspectValue: {
 			if (value instanceof InfoText) {
 				return 'infotext';
 			}
+			if (value instanceof Error) {
+				return 'error';
+			}
 			const type = typeof value;
 			if (type === 'function' && /^class\b/.test(value)) {
 				return 'class';
@@ -425,7 +432,7 @@ InspectValue: {
 			}
 			const value = this.value;
 			const ivType = this.constructor.getIvType(value);
-			let displayValueNodes = this._generateValueView(value, ivType);
+			let displayValueNodes = this.constructor._generateValueView(value, ivType);
 			
 			this.shadowRoot.elWrapper.setAttribute('iv-i-type', ivType);
 			this.shadowRoot.elWrapper.toggleAttribute('iv-i-expandable', this.expandable);
@@ -516,8 +523,14 @@ InspectValue: {
 			if (!(getter instanceof Getter)) {
 				throw new Error(`Current value is not a getter`);
 			}
-			this.value = getter();
-			return this.value;
+			try {
+				this.value = getter();
+				return this.value;
+			}
+			catch (err) {
+				this.value = err;
+				// throw err;
+			}
 		}
 		
 		/////////////////////////////////////////////
@@ -548,7 +561,7 @@ InspectValue: {
 			);
 		}
 		
-		_generateValueView(value, ivType) {
+		static _generateValueView(value, ivType) {
 			if (ivType === 'null') {
 				return ['null'];
 			}
@@ -557,6 +570,9 @@ InspectValue: {
 			}
 			else if (ivType === 'getter') {
 				return [];
+			}
+			else if (ivType === 'error') {
+				return [(value.constructor || Object).name];
 			}
 			else if (ivType === 'object') {
 				if (value instanceof Array) {
@@ -578,26 +594,40 @@ InspectValue: {
 					return [(value.constructor || Object).name];
 				}
 			}
-			else if (ivType === 'string' && value.length > 500) {
-				const sliceSize = 200;
-				const res = new Array(3);
-				res[0] = document.createTextNode(value.slice(0, sliceSize));
-				res[1] = document.createElement('span');
-				res[1].className = 'collapsed-string-slice';
-				res[1].textContent = value.slice(sliceSize, value.length - sliceSize);
-				res[2] = document.createTextNode(value.slice(value.length - sliceSize));
-				return res;
+			else if (ivType === 'string') {
+				return this._generateValueViewString(value);
 			}
 			else if (ivType === 'bigint') {
 				return [String(value) + 'n'];
 			}
 			else if (ivType === 'function') {
-				return ['Function'];
+				return this._generateValueViewFunction(value);
 			}
 			else if (ivType === 'class') {
 				return [value.name];
 			}
 			return [String(value)];
+		}
+		
+		static _generateValueViewString(value) {
+			if (value.length < 500) {
+				return [value];
+			}
+			const sliceSize = 200;
+			const res = new Array(3);
+			res[0] = document.createTextNode(value.slice(0, sliceSize));
+			res[1] = document.createElement('span');
+			res[1].className = 'collapsed-string-slice';
+			res[1].textContent = value.slice(sliceSize, value.length - sliceSize);
+			res[2] = document.createTextNode(value.slice(value.length - sliceSize));
+			return res;
+		}
+		
+		static _generateValueViewFunction(value) {
+			let res = value.name;
+			const m = /^[^\(]*\((.*)\)\s*(?:\{|=>)/.exec(value);
+			res += '(' + (!m ? '' : m[1]).trim() + ')';
+			return [res];
 		}
 		
 		static _getDescriptors(obj0, includeExtra, levelLimit) {

@@ -58,9 +58,17 @@ class Ololo {
 }
 document.body.appendChild(new InspectValue(new Ololo()));
 
-const named = () => '1234';
+const named = (param) => '1234' + param;
 document.body.appendChild(new InspectValue(named));
-document.body.appendChild(new InspectValue(() => '5678'));
+document.body.appendChild(new InspectValue((param) => '5678' + param));
+document.body.appendChild(new InspectValue(new Error(`Test error`)));
+
+try {
+    1n / 0n;
+}
+catch (err) {
+    document.body.appendChild(new InspectValue(err));
+}
 
 </script>
 </body>
