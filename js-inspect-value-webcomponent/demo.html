@@ -16,24 +16,24 @@ inspect-value {
 <body>
 <script type="text/javascript">
 
-document.body.appendChild(new InspectValue());
-document.body.appendChild(new InspectValue(null));
-document.body.appendChild(new InspectValue(true));
-document.body.appendChild(new InspectValue(false));
-document.body.appendChild(new InspectValue(0));
-document.body.appendChild(new InspectValue(1234));
-document.body.appendChild(new InspectValue(13461347123582458n));
-document.body.appendChild(new InspectValue("Ololo"));
-// document.body.appendChild(new InspectValue(window));
-document.body.appendChild(new InspectValue([0, 1, "Mememe", 1234n]));
-document.body.appendChild(new InspectValue(new Array(100).fill('long string').join(' ')));
-document.body.appendChild(new InspectValue(new Set([1,2,3,4])));
+document.body.appendChild(InspectValue.create());
+document.body.appendChild(InspectValue.create(null));
+document.body.appendChild(InspectValue.create(true));
+document.body.appendChild(InspectValue.create(false));
+document.body.appendChild(InspectValue.create(0));
+document.body.appendChild(InspectValue.create(1234));
+document.body.appendChild(InspectValue.create(13461347123582458n));
+document.body.appendChild(InspectValue.create("Ololo"));
+// document.body.appendChild(InspectValue.create(window));
+document.body.appendChild(InspectValue.create([0, 1, "Mememe", 1234n]));
+document.body.appendChild(InspectValue.create(new Array(100).fill('long string').join(' ')));
+document.body.appendChild(InspectValue.create(new Set([1,2,3,4])));
 var m = new Map();
 m.set({}, 'obj1');
 m.set([], 'arr');
 m.set({}, 'obj2');
-document.body.appendChild(new InspectValue(m));
-document.body.appendChild(new InspectValue({
+document.body.appendChild(InspectValue.create(m));
+document.body.appendChild(InspectValue.create({
     null: null,
     boolTrue: true,
     boolFalse: false,
@@ -45,32 +45,32 @@ document.body.appendChild(new InspectValue({
     [Symbol('sym')]: 'Symbol is here',
     Boolean: new Boolean(false),
 }));
-document.body.appendChild(new InspectValue([,,,,1234,5,6,7,8]));
-document.body.appendChild(new InspectValue(new Date()));
-document.body.appendChild(new InspectValue(new Date(NaN)));
-document.body.appendChild(new InspectValue(window));
-document.body.appendChild(new InspectValue(Symbol('sym')));
+document.body.appendChild(InspectValue.create([,,,,1234,5,6,7,8]));
+document.body.appendChild(InspectValue.create(new Date()));
+document.body.appendChild(InspectValue.create(new Date(NaN)));
+document.body.appendChild(InspectValue.create(window));
+document.body.appendChild(InspectValue.create(Symbol('sym')));
 
 class Ololo {
     get ololo() {
         return 'mememe';
     }
 }
-document.body.appendChild(new InspectValue(new Ololo()));
+document.body.appendChild(InspectValue.create(new Ololo()));
 
 const named = (param) => '1234' + param;
-document.body.appendChild(new InspectValue(named));
-document.body.appendChild(new InspectValue((param) => '5678' + param));
-document.body.appendChild(new InspectValue(new Error(`Test error`)));
+document.body.appendChild(InspectValue.create(named));
+document.body.appendChild(InspectValue.create((param) => '5678' + param));
+document.body.appendChild(InspectValue.create(new Error(`Test error`)));
 
 try {
     1n / 0n;
 }
 catch (err) {
-    document.body.appendChild(new InspectValue(err));
+    document.body.appendChild(InspectValue.create(err));
 }
 
-document.body.appendChild(new InspectValueProperty(new InspectValue.Getter(() => {
+document.body.appendChild(InspectValueProperty.create(new InspectValue.Getter(() => {
     return new InspectValue.InfoText(`You've clicked it`);
 }), 'inline getter'));
 
@@ -79,9 +79,12 @@ let recursiveGetterFunction = () => {
     return recursiveGetter;
 };
 let recursiveGetter = new InspectValue.Getter(recursiveGetterFunction);
-document.body.appendChild(new InspectValue(recursiveGetterFunction));
-document.body.appendChild(new InspectValueProperty(recursiveGetter, 'recursive inline getter'));
+document.body.appendChild(InspectValue.create(recursiveGetterFunction));
+document.body.appendChild(InspectValueProperty.create(recursiveGetter, 'recursive inline getter'));
 
 </script>
+<inspect-value-property>
+    Ololo<inspect-value slot="value">Mememe</inspect-value>
+</inspect-value-property>
 </body>
 </html>

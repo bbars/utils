@@ -102,18 +102,23 @@ common: {
 				return ['unnamed', 'enclosed', 'basic', 'inherited', 'virtual', 'hidden'];
 			}
 			
-			constructor(value, propertyName) {
+			constructor() {
 				super();
 				this.attachShadow({ mode: 'open' });
 				this.shadowRoot.appendChild(TPL_BASE.content.cloneNode(true));
 				this.shadowRoot.elContainer = this.shadowRoot.getElementById('elContainer');
-				this.value = value;
+			}
+			
+			static create(value, propertyName) {
+				const res = new this();
+				res.value = value;
 				if (arguments.length > 1) {
-					this.propertyName = propertyName;
+					res.propertyName = propertyName;
 				}
 				else {
-					this.unnamed = true;
+					res.unnamed = true;
 				}
+				return res;
 			}
 			
 			get propertyName() {
@@ -133,7 +138,7 @@ common: {
 					this.enclosed = false;
 					
 					if (propertyName.trim() === '') {
-						this.appendChild(new InspectValue(propertyName));
+						this.appendChild(InspectValue.create(propertyName));
 						this.basic = false;
 					}
 					else {
@@ -143,7 +148,7 @@ common: {
 				}
 				else {
 					this.enclosed = true;
-					this.appendChild(new InspectValue(propertyName));
+					this.appendChild(InspectValue.create(propertyName));
 					this.basic = false;
 				}
 			}
@@ -156,7 +161,7 @@ common: {
 					this.removeChild(node);
 				});
 				this[KEY_VALUE] = value;
-				const elPropertyValue = new InspectValue(value);
+				const elPropertyValue = InspectValue.create(value);
 				elPropertyValue.slot = 'value';
 				this.appendChild(elPropertyValue);
 			}
@@ -186,11 +191,10 @@ common: {
 					? new Getter(descriptor.get, parentValue)
 					: descriptor.value
 				;
-				const args = [value];
-				if (descriptor.hasOwnProperty('name')) {
-					args.push(descriptor.name);
-				}
-				const res = new this(...args);
+				const res = descriptor.hasOwnProperty('name')
+					? InspectValueProperty.create(value, descriptor.name)
+					: InspectValueProperty.create(value)
+				;
 				res.inherited = descriptor.inherited || false;
 				res.virtual = descriptor.virtual || false;
 				res.hidden = !descriptor.enumerable && !descriptor.unhide;
@@ -489,7 +493,7 @@ common: {
 				return ['disabled', 'expanded'];
 			}
 			
-			constructor(value) {
+			constructor() {
 				super();
 				this.attachShadow({ mode: 'open' });
 				this.shadowRoot.appendChild(TPL_BASE.content.cloneNode(true));
@@ -503,8 +507,12 @@ common: {
 					}
 					this.evaluateGetter();
 				});
-				
-				this.value = value;
+			}
+			
+			static create(value) {
+				const res = new this();
+				res.value = value;
+				return res;
 			}
 			
 			get value() {
