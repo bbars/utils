@@ -5,16 +5,18 @@ InspectValueProperty: {
 		
 		:host {
 			display: block;
-			--greyed-opacity: 0.65;
+			--greyed-opacity: 0.7;
 			--color-property: #a2a;
 		}
 		:host #elWrapper {
+			margin-left: 2em;
+			text-indent: -2em;
 		}
 		:host([iv-unnamed]) #elContainer {
 			display: none;
 		}
 		
-		:host slot:not([name]) {
+		:host([iv-basic]) slot:not([name]) {
 			color: var(--color-property);
 		}
 		:host([iv-hidden]) #elContainer {
@@ -224,8 +226,11 @@ InspectValue: {
 		}
 		
 		:host #elChildren {
-			padding-left: 2em;
+			margin-left: 2em;
 			display: none;
+		}
+		:host-context(inspect-value-property) #elChildren {
+			margin-left: 0; /* already spaced by inspect-value-property */
 		}
 		:host([expanded]) #elChildren {
 			display: flex;
@@ -331,7 +336,7 @@ InspectValue: {
 					level = this[KEY_CHILDREN_RENDERED_LEVEL];
 				}
 				const value = this.value;
-				if (value != null && value.constructor !== Object) {
+				if (value != null && value.constructor !== Object && value.constructor !== Array) {
 					level = Math.max(level, 2);
 				}
 				this.renderChildren(level);
@@ -471,7 +476,7 @@ InspectValue: {
 				elProperty.slot = 'children';
 				elProperty.toggleAttribute('iv-inherited', descriptor.inherited || false);
 				elProperty.toggleAttribute('iv-virtual', descriptor.virtual || false);
-				elProperty.toggleAttribute('iv-hidden', !descriptor.enumerable);
+				elProperty.toggleAttribute('iv-hidden', !descriptor.enumerable && !descriptor.unhide);
 				if (descriptor.name == null) {
 					elProperty.toggleAttribute('iv-unnamed', true);
 				}
@@ -481,6 +486,7 @@ InspectValue: {
 					}
 					else {
 						elProperty.textContent = descriptor.name;
+						elProperty.toggleAttribute('iv-basic', true);
 					}
 				}
 				else {
@@ -635,6 +641,7 @@ InspectValue: {
 					prepend.push({
 						// name: prepend.length,
 						virtual: true,
+						unhide: true,
 						value: entry,
 					});
 				}
@@ -647,6 +654,7 @@ InspectValue: {
 						name: entry[0],
 						// name: prepend.length,
 						virtual: true,
+						unhide: true,
 						value: entry[1],
 					});
 				}
@@ -670,6 +678,7 @@ InspectValue: {
 				descriptors.unshift({
 					// name: 'toString()',
 					virtual: true,
+					unhide: true,
 					value: new InfoText(obj0.toString()),
 				});
 			}
