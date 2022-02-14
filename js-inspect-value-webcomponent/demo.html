@@ -49,6 +49,18 @@ document.body.appendChild(new InspectValue([,,,,1234,5,6,7,8]));
 document.body.appendChild(new InspectValue(new Date()));
 document.body.appendChild(new InspectValue(new Date(NaN)));
 document.body.appendChild(new InspectValue(window));
+document.body.appendChild(new InspectValue(Symbol('sym')));
+
+class Ololo {
+    get ololo() {
+        return 'mememe';
+    }
+}
+document.body.appendChild(new InspectValue(new Ololo()));
+
+const named = () => '1234';
+document.body.appendChild(new InspectValue(named));
+document.body.appendChild(new InspectValue(() => '5678'));
 
 </script>
 </body>

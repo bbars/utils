@@ -5,6 +5,8 @@ InspectValueProperty: {
 		
 		:host {
 			display: block;
+			--greyed-opacity: 0.65;
+			--color-property: #a2a;
 		}
 		:host #elWrapper {
 		}
@@ -13,31 +15,22 @@ InspectValueProperty: {
 		}
 		
 		:host slot:not([name]) {
-			color: #a2a;
-		}
-		:host([iv-property-type="symbol"]) slot:not([name]) {
-			color: #d32;
+			color: var(--color-property);
 		}
 		:host([iv-hidden]) #elContainer {
-			opacity: 0.5;
-		}
-		:host(:not([iv-enumerable])) #elContainer {
-			opacity: 0.5;
-		}
-		:host([iv-virtual]) #elContainer {
-			opacity: 1;
+			opacity: var(--greyed-opacity);
 		}
 		
-		:host([iv-property-type="symbol"]) #elContents:before {
+		:host([iv-enclose]) #elContents:before {
 			content: '[';
 		}
-		:host([iv-property-type="symbol"]) #elContents:after {
+		:host([iv-enclose]) #elContents:after {
 			content: ']';
 		}
 		
-		:host([iv-virtual]) #elContents:before,
-		:host([iv-virtual]) #elContents:after {
-			opacity: 0.5;
+		:host([iv-virtual]:not([iv-hidden])) #elContents:before,
+		:host([iv-virtual]:not([iv-hidden])) #elContents:after {
+			opacity: var(--greyed-opacity);
 		}
 		:host([iv-virtual]) #elContents:before {
 			content: '[[';
@@ -75,6 +68,7 @@ InspectValueProperty: {
 			<span id="elContainer"><span id="elInherited"></span><span id="elContents"><slot></slot></span>: </span><slot name="value"></slot>
 		</div>
 	`;
+	TPL_BASE.innerHTML = TPL_BASE.innerHTML.trim().replace(/>[\t\n]+</g, '><');
 	
 	class InspectValueProperty extends HTMLElement {
 		constructor() {
@@ -98,15 +92,20 @@ InspectValue: {
 			display: inline;
 			font-family: monospace;
 			--max-string-length: 500;
-			--color-undefined: #888;
+			--color-undefined: #666;
 			--color-boolean: #a2a;
-			--color-null: #a2a;
+			--color-null: #666;
 			--color-number: #42d;
 			--color-bigint: #262;
 			--color-string: #d32;
+			--color-symbol: #d32;
+			--color-class: #42d;
 			--color-function: inherit;
 			--color-object: inherit;
 			--color-infotext: #888;
+			--color-getter: #990;
+			--content-getter: '(get)';
+			--content-more: '\\2219\\2219\\2219';
 		}
 		:host #elWrapper {
 		}
@@ -114,24 +113,25 @@ InspectValue: {
 		}
 		
 		:host #elBtnToggleChildren:before {
-			content: '\\25b6';
+			content: '\\25e2';
 			font-style: initial;
 			text-indent: 0;
-			font-size: 0.75em;
+			font-size: 0.8em;
 			width: 1em;
 			vertical-align: middle;
 			line-height: 1em;
 			height: 1em;
-			text-align: left;
+			text-align: center;
 			margin-right: 0.15em;
 			color: #444;
-			transform-origin: 40% 40%;
+			transform-origin: 65% 65%;
 			transition: transform 100ms ease;
+			transform: translate(0%, -25%) rotate(-45deg);
 			
 			display: none;
 		}
 		:host([expanded]) #elBtnToggleChildren:before {
-			transform: rotate(90deg);
+			transform: translate(-10%, -25%) rotate(+45deg);
 		}
 		:host #elWrapper[iv-i-expandable] #elBtnToggleChildren:before {
 			display: inline-block;
@@ -139,8 +139,26 @@ InspectValue: {
 		:host #elWrapper[iv-i-expandable] #elContainer {
 			cursor: pointer;
 		}
-		:host #elWrapper[iv-i-expandable] #elContainer:hover #elContents {
-			text-decoration: underline;
+		@media(hover: hover) and (pointer: fine) {
+			:host #elWrapper[iv-i-expandable] #elContainer:hover #elContents {
+				text-decoration: underline;
+			}
+		}
+		
+		:host #elWrapper #elBtnGetter {
+			cursor: pointer;
+			color: var(--color-getter);
+		}
+		:host #elWrapper[iv-i-type="getter"] #elBtnGetter:before {
+			content: var(--content-getter);
+		}
+		@media(hover: hover) and (pointer: fine) {
+			:host #elWrapper #elBtnGetter:hover {
+				text-decoration: underline;
+			}
+		}
+		:host #elWrapper:not([iv-i-type="getter"]) #elBtnGetter {
+			display: none;
 		}
 		
 		:host #elWrapper[iv-i-type="undefined"] #elContents > slot {
@@ -158,6 +176,9 @@ InspectValue: {
 		:host #elWrapper[iv-i-type="bigint"] #elContents > slot {
 			color: var(--color-bigint);
 		}
+		:host #elWrapper[iv-i-type="symbol"] #elContents > slot {
+			color: var(--color-symbol);
+		}
 		:host #elWrapper[iv-i-type="string"] #elContents:before,
 		:host #elWrapper[iv-i-type="string"] #elContents:after {
 			content: '"';
@@ -166,10 +187,19 @@ InspectValue: {
 			color: var(--color-string);
 			white-space: pre-wrap;
 		}
-		:host #elWrapper[iv-i-type="function"] #elContents > slot {
-			color: var(--color-function);
-			white-space: pre-wrap;
+		:host #elWrapper[iv-i-type="class"] #elContents > slot {
 			font-style: italic;
+			color: var(--color-class);
+		}
+		:host #elWrapper[iv-i-type="class"] #elContents > slot:before {
+			content: 'class\\00a0';
+		}
+		:host #elWrapper[iv-i-type="function"] #elContents > slot {
+			font-style: italic;
+			color: var(--color-function);
+		}
+		:host #elWrapper[iv-i-type="function"] #elContents > slot:before {
+			content: '\\0192\\00a0';
 		}
 		:host #elWrapper[iv-i-type="object"] #elContents > slot {
 			color: var(--color-object);
@@ -198,10 +228,11 @@ InspectValue: {
 			display: none;
 		}
 		:host([expanded]) #elChildren {
-			display: block;
+			display: flex;
+			flex-direction: column;
 		}
 		
-		:host #elBtnShowDeeper {
+		:host #elBtnShowMore {
 			display: inline-block;
 			padding: 0.25em 0;
 			line-height: 0.5em;
@@ -210,28 +241,38 @@ InspectValue: {
 			margin-left: 2em;
 			display: none;
 		}
-		:host #elBtnShowDeeper:before {
-			content: '\\2219\\2219\\2219';
+		:host #elBtnShowMore:before {
+			content: var(--content-more);
 		}
-		:host([expanded]) #elWrapper[iv-i-has-more] #elBtnShowDeeper {
+		:host([expanded]) #elWrapper[iv-i-has-more] #elBtnShowMore {
 			display: inline-block;
 		}
 		
 		</style>
 		<span id="elWrapper">
+			<span id="elBtnGetter"></span>
 			<span id="elContainer">
 				<span id="elBtnToggleChildren"></span><span id="elContents"><slot></slot></span>
 			</span>
 			<slot name="children" id="elChildren"></slot>
-			<span id="elBtnShowDeeper"></span>
+			<span id="elBtnShowMore"></span>
 		</span>
 	`;
+	TPL_BASE.innerHTML = TPL_BASE.innerHTML.trim().replace(/>[\t\n]+</g, '><');
 	
 	const KEY_VALUE = Symbol('value');
 	const KEY_CHILDREN_RENDERED_LEVEL = Symbol('childrenRenderedLevel');
 	const KEY_IGNORE_ATTRIBUTE_CHANGES = Symbol('ignoreAttributeChanges');
 	
 	class InfoText extends String {}
+	
+	class Getter extends Function {
+		constructor(obj, fn) {
+			const getter = () => fn.call(obj);
+			Object.setPrototypeOf(getter, Getter.prototype);
+			return getter;
+		}
+	}
 	
 	class InspectValue extends HTMLElement {
 		[KEY_IGNORE_ATTRIBUTE_CHANGES] = 0;
@@ -246,7 +287,11 @@ InspectValue: {
 			this.shadowRoot.appendChild(TPL_BASE.content.cloneNode(true));
 			this.shadowRoot.elWrapper = this.shadowRoot.getElementById('elWrapper');
 			this.shadowRoot.elContainer = this.shadowRoot.getElementById('elContainer');
-			this.shadowRoot.elBtnShowDeeper = this.shadowRoot.getElementById('elBtnShowDeeper');
+			this.shadowRoot.elBtnShowMore = this.shadowRoot.getElementById('elBtnShowMore');
+			this.shadowRoot.elBtnGetter = this.shadowRoot.getElementById('elBtnGetter');
+			this.shadowRoot.elBtnGetter.addEventListener('click', (event) => {
+				this.evaluateGetter();
+			});
 			
 			this.value = value;
 		}
@@ -262,6 +307,7 @@ InspectValue: {
 		get expandable() {
 			return this.value !== null
 				&& !(this.value instanceof InfoText)
+				&& !(this.value instanceof Getter)
 				&& (typeof this.value === 'object' || typeof this.value === 'function')
 			;
 		}
@@ -269,9 +315,9 @@ InspectValue: {
 		get expanded() {
 			return this.hasAttribute('expanded');
 		}
-		set expanded(value) {
-			value = !!value;
-			if (!value) {
+		set expanded(expanded) {
+			expanded = !!expanded;
+			if (!expanded) {
 				this[KEY_IGNORE_ATTRIBUTE_CHANGES]++;
 				this.toggleAttribute('expanded', false);
 				this[KEY_IGNORE_ATTRIBUTE_CHANGES]--;
@@ -280,7 +326,15 @@ InspectValue: {
 				this[KEY_IGNORE_ATTRIBUTE_CHANGES]++;
 				this.toggleAttribute('expanded', true);
 				this[KEY_IGNORE_ATTRIBUTE_CHANGES]--;
-				this.renderChildren(this[KEY_CHILDREN_RENDERED_LEVEL] || 1);
+				let level = 1;
+				if (level < this[KEY_CHILDREN_RENDERED_LEVEL]) {
+					level = this[KEY_CHILDREN_RENDERED_LEVEL];
+				}
+				const value = this.value;
+				if (value != null && value.constructor !== Object) {
+					level = Math.max(level, 2);
+				}
+				this.renderChildren(level);
 			}
 		}
 		
@@ -306,14 +360,14 @@ InspectValue: {
 		
 		connectedCallback() {
 			this.shadowRoot.$$onClick = this.$$onClick.bind(this);
-			this.shadowRoot.$$onClickShowDeeper = this.$$onClickShowDeeper.bind(this);
+			this.shadowRoot.$$onClickShowMore = this.$$onClickShowMore.bind(this);
 			
 			this.shadowRoot.elContainer.addEventListener('click', this.shadowRoot.$$onClick);
-			this.shadowRoot.elBtnShowDeeper.addEventListener('click', this.shadowRoot.$$onClickShowDeeper);
+			this.shadowRoot.elBtnShowMore.addEventListener('click', this.shadowRoot.$$onClickShowMore);
 		}
 		disconnectedCallback() {
 			this.shadowRoot.elContainer.removeEventListener('click', this.shadowRoot.$$onClick);
-			this.shadowRoot.elBtnShowDeeper.removeEventListener('click', this.shadowRoot.$$onClickShowDeeper);
+			this.shadowRoot.elBtnShowMore.removeEventListener('click', this.shadowRoot.$$onClickShowMore);
 		}
 		
 		get disabled() {
@@ -342,10 +396,17 @@ InspectValue: {
 			if (value === null) {
 				return 'null';
 			}
+			if (value instanceof Getter) {
+				return 'getter';
+			}
 			if (value instanceof InfoText) {
 				return 'infotext';
 			}
-			return typeof value;
+			const type = typeof value;
+			if (type === 'function' && /^class\b/.test(value)) {
+				return 'class';
+			}
+			return type;
 		}
 		
 		/////////////////////////////////////////////
@@ -396,6 +457,7 @@ InspectValue: {
 				, levelLimit + 1
 			);
 			let hasMore = false;
+			// const documentFragment = document.createDocumentFragment();
 			for (const descriptor of allDescriptors) {
 				if (descriptor.level >= levelLimit) {
 					hasMore = true;
@@ -405,24 +467,33 @@ InspectValue: {
 					continue;
 				}
 				const elProperty = document.createElement('inspect-value-property');
+				const propertyNameIvType = this.constructor.getIvType(descriptor.name);
 				elProperty.slot = 'children';
-				elProperty.setAttribute('iv-property-type', this.constructor.getIvType(descriptor.name));
-				elProperty.setAttribute('iv-value-type', this.constructor.getIvType(descriptor.value));
 				elProperty.toggleAttribute('iv-inherited', descriptor.inherited || false);
 				elProperty.toggleAttribute('iv-virtual', descriptor.virtual || false);
-				elProperty.toggleAttribute('iv-enumerable', descriptor.enumerable || false);
+				elProperty.toggleAttribute('iv-hidden', !descriptor.enumerable);
 				if (descriptor.name == null) {
 					elProperty.toggleAttribute('iv-unnamed', true);
 				}
-				else if (typeof descriptor.name !== 'object') {
-					elProperty.textContent = String(descriptor.name);
+				else if (propertyNameIvType === 'string') {
+					if (descriptor.name.trim() === '') {
+						elProperty.appendChild(new this.constructor(descriptor.name));
+					}
+					else {
+						elProperty.textContent = descriptor.name;
+					}
 				}
 				else {
 					elProperty.appendChild(new this.constructor(descriptor.name));
+					elProperty.toggleAttribute('iv-enclose', true);
 				}
 				elProperty._descriptor = descriptor;
 				
-				const elPropertyValue = new this.constructor(descriptor.value);
+				const value = typeof descriptor.get === 'function'
+					? new Getter(this.value, descriptor.get)
+					: descriptor.value
+				;
+				const elPropertyValue = new this.constructor(value);
 				elPropertyValue.slot = 'value';
 				elProperty.appendChild(elPropertyValue);
 				
@@ -432,6 +503,15 @@ InspectValue: {
 			this.shadowRoot.elWrapper.toggleAttribute('iv-i-has-more', hasMore);
 			this[KEY_CHILDREN_RENDERED_LEVEL] = levelLimit;
 			return true;
+		}
+		
+		evaluateGetter() {
+			const getter = this.value;
+			if (!(getter instanceof Getter)) {
+				throw new Error(`Current value is not a getter`);
+			}
+			this.value = getter();
+			return this.value;
 		}
 		
 		/////////////////////////////////////////////
@@ -448,7 +528,7 @@ InspectValue: {
 			this.expanded = !this.expanded;
 		}
 		
-		$$onClickShowDeeper(event) {
+		$$onClickShowMore(event) {
 			if (this.disabled) {
 				return;
 			}
@@ -468,6 +548,9 @@ InspectValue: {
 			}
 			else if (ivType === 'infotext') {
 				return [value.toString()];
+			}
+			else if (ivType === 'getter') {
+				return [];
 			}
 			else if (ivType === 'object') {
 				if (value instanceof Array) {
@@ -504,6 +587,9 @@ InspectValue: {
 			}
 			else if (ivType === 'function') {
 				return ['Function'];
+			}
+			else if (ivType === 'class') {
+				return [value.name];
 			}
 			return [String(value)];
 		}
