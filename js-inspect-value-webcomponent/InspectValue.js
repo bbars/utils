@@ -5,8 +5,9 @@ InspectValueProperty: {
 		
 		:host {
 			display: block;
+			font-family: monospace;
 			--greyed-opacity: 0.7;
-			--color-property: #a2a;
+			--color-basic: #a2a;
 		}
 		:host #elWrapper {
 			margin-left: 2em;
@@ -17,7 +18,7 @@ InspectValueProperty: {
 		}
 		
 		:host([iv-basic]) slot:not([name]) {
-			color: var(--color-property);
+			color: var(--color-basic);
 		}
 		:host([iv-hidden]) #elContainer {
 			opacity: var(--greyed-opacity);
