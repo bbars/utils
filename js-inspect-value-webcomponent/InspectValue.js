@@ -23,6 +23,7 @@ common: {
 			:host {
 				display: block;
 				font-family: monospace;
+				cursor: default;
 				--greyed-opacity: 0.7;
 				--color-basic: #a2a;
 			}
@@ -287,6 +288,7 @@ common: {
 			:host {
 				display: inline;
 				font-family: monospace;
+				cursor: default;
 				--max-string-length: 500;
 				--color-undefined: #666;
 				--color-boolean: #a2a;
@@ -335,21 +337,29 @@ common: {
 			:host #elWrapper[iv-i-expandable] #elContainer {
 				cursor: pointer;
 			}
+			:host([disabled]) #elWrapper[iv-i-expandable] #elContainer {
+				cursor: not-allowed;
+			}
 			@media(hover: hover) and (pointer: fine) {
-				:host #elWrapper[iv-i-expandable] #elContainer:hover #elContents {
+				:host(:not([disabled])) #elWrapper[iv-i-expandable] #elContainer:hover #elContents {
 					text-decoration: underline;
 				}
 			}
 			
 			:host #elWrapper #elBtnGetter {
-				cursor: pointer;
 				color: var(--color-getter);
+			}
+			:host #elWrapper #elBtnGetter {
+				cursor: pointer;
+			}
+			:host([disabled]) #elWrapper #elBtnGetter {
+				cursor: not-allowed;
 			}
 			:host #elWrapper[iv-i-type="getter"] #elBtnGetter:before {
 				content: var(--content-getter);
 			}
 			@media(hover: hover) and (pointer: fine) {
-				:host #elWrapper #elBtnGetter:hover {
+				:host(:not([disabled])) #elWrapper #elBtnGetter:hover {
 					text-decoration: underline;
 				}
 			}
@@ -439,10 +449,15 @@ common: {
 				display: inline-block;
 				padding: 0.25em 0;
 				line-height: 0.5em;
-				cursor: pointer;
 				
 				margin-left: 2em;
 				display: none;
+			}
+			:host(:not([disabled])) #elBtnShowMore {
+				cursor: pointer;
+			}
+			:host([disabled]) #elBtnShowMore {
+				cursor: not-allowed;
 			}
 			:host #elBtnShowMore:before {
 				content: var(--content-more);
@@ -483,6 +498,9 @@ common: {
 				this.shadowRoot.elBtnShowMore = this.shadowRoot.getElementById('elBtnShowMore');
 				this.shadowRoot.elBtnGetter = this.shadowRoot.getElementById('elBtnGetter');
 				this.shadowRoot.elBtnGetter.addEventListener('click', (event) => {
+					if (this.disabled) {
+						return;
+					}
 					this.evaluateGetter();
 				});
 				
