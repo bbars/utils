@@ -8,7 +8,7 @@
 <style>
 
 inspect-value {
-    display: block;
+    /*display: block;*/
 }
 
 </style>
@@ -19,30 +19,40 @@ inspect-value {
 
 function add(...els) {
     const row = document.createElement('div');
+    let first = true;
     for (const el of els) {
+        if (!first) {
+            row.appendChild(document.createTextNode(', '));
+        }
         row.appendChild(el);
+        first = false;
     }
     document.body.appendChild(row);
+    return row;
 }
 
-add(InspectValue.create());
-add(InspectValue.create(null));
-add(InspectValue.create(true));
-add(InspectValue.create(false));
-add(InspectValue.create(0));
-add(InspectValue.create(1234));
-add(InspectValue.create(13461347123582458n));
-add(InspectValue.create("Ololo"));
-// add(InspectValue.create(window));
-add(InspectValue.create([0, 1, "Mememe", 1234n]));
-add(InspectValue.create(new Array(100).fill('long string').join(' ')));
-add(InspectValue.create(new Set([1,2,3,4])));
+function addValues(...values) {
+    return add(...values.map((value) => InspectValue.create(value)));
+}
+
+add(InspectValue.create(), InspectValue.create(null));
+add(InspectValue.create(true), InspectValue.create(false));
+addValues(0, 1234, NaN, 1/0);
+addValues(13461347123582458n);
+addValues("Ololo");
+addValues([0, 1, "Mememe", 1234n]);
+addValues(new Array(100).fill('long string').join(' '));
+addValues(new Set([1,2,3,4]));
 var m = new Map();
 m.set({}, 'obj1');
 m.set([], 'arr');
 m.set({}, 'obj2');
-add(InspectValue.create(m));
-add(InspectValue.create({
+addValues(m);
+addValues(document.body);
+const iv = InspectValue.create(undefined, 'inspect self');
+iv.value = iv;
+add(iv);
+addValues({
     null: null,
     boolTrue: true,
     boolFalse: false,
@@ -53,12 +63,12 @@ add(InspectValue.create({
     arr: [0, 1, "Mememe", 1234n],
     [Symbol('sym')]: 'Symbol is here',
     Boolean: new Boolean(false),
-}));
-add(InspectValue.create([,,,,1234,5,6,7,8]));
-add(InspectValue.create(new Date()));
-add(InspectValue.create(new Date(NaN)));
-add(InspectValue.create(window));
-add(InspectValue.create(Symbol('sym')));
+});
+addValues([,,,,1234,5,6,7,8]);
+addValues(new Date());
+addValues(new Date(NaN));
+addValues(window);
+addValues(Symbol('sym'));
 
 class Ololo {
     get ololo() {
@@ -68,15 +78,15 @@ class Ololo {
 add(InspectValue.create(new Ololo()));
 
 const named = (param) => '1234' + param;
-add(InspectValue.create(named));
-add(InspectValue.create((param) => '5678' + param));
-add(InspectValue.create(new Error(`Test error`)));
+addValues(named);
+addValues((param) => '5678' + param);
+addValues(new Error(`Test error`));
 
 try {
     1n / 0n;
 }
 catch (err) {
-    add(InspectValue.create(err));
+    addValues(err);
 }
 
 add(InspectValue.create(new InspectValue.Getter(() => {
@@ -84,15 +94,19 @@ add(InspectValue.create(new InspectValue.Getter(() => {
 }), 'inline getter'));
 
 let recursiveGetterFunction = () => {
-    alert(`Returning same getter as a result`);
-    return recursiveGetter;
+    const infoText = new InspectValue.InfoText(`Returning same getter as a result`);
+    const valueWrapper = new InspectValue.ValueWrapper(infoText);
+    setTimeout(() => {
+        valueWrapper.set(recursiveGetter);
+    }, 2000);
+    return valueWrapper;
 };
 let recursiveGetter = new InspectValue.Getter(recursiveGetterFunction);
-add(InspectValue.create(recursiveGetterFunction));
+addValues(InspectValue.create(recursiveGetterFunction));
 add(InspectValue.create(recursiveGetter, 'recursive inline getter'));
 
 let valueWrapper = new InspectValue.ValueWrapper(0);
-add(InspectValue.create(valueWrapper));
+addValues(valueWrapper);
 valueWrapper._tmr = setInterval(() => { valueWrapper.set(valueWrapper.get() + 1) }, 1000);
 
 (async () => {
@@ -104,22 +118,22 @@ valueWrapper._tmr = setInterval(() => { valueWrapper.set(valueWrapper.get() + 1)
         }
         return a + 1
     };
-    add(InspectValue.create(asyncFunction));
+    addValues(asyncFunction);
     
     const prom0 = asyncFunction(0);
-    add(InspectValue.create(prom0));
+    addValues(prom0);
     
     const prom1 = asyncFunction(asyncFunction(0));
-    add(InspectValue.create(prom1));
+    addValues(prom1);
     const res1 = await prom1;
-    add(InspectValue.create(res1));
+    addValues(res1);
     
     const prom2 = asyncFunction(NaN);
-    add(InspectValue.create(prom2));
+    addValues(prom2);
     try {
         // this would result in an error
         const res2 = await prom2;
-        add(InspectValue.create(res2));
+        addValues(res2);
     }
     catch (err) {
         console.warn(`Expected error`, err);

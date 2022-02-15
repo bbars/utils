@@ -767,8 +767,20 @@ common: {
 					}
 					else if (value instanceof Date) {
 						return [
-							`${value.constructor.name}(${isNaN(value) ? 'Invalid Date' : value.toISOString()})`,
+							`${value.constructor.name} {${isNaN(value) ? 'Invalid Date' : value.toISOString()}}`,
 						];
+					}
+					else if (value instanceof HTMLElement) {
+						try {
+							return [
+								`${value.constructor.name} <${value.tagName.toLowerCase()}>`,
+							];
+						}
+						catch (err) {
+							return [
+								`${value.constructor.name}`,
+							];
+						}
 					}
 					else {
 						return [(value.constructor || Object).name];
