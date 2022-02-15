@@ -83,6 +83,22 @@ common: {
 			}
 			:host #elContainer {
 			}
+			:host #elValueLine {
+				display: inline-flex;
+				max-width: 100%;
+				flex-wrap: nowrap;
+				gap: 1em;
+			}
+			:host #elValueLine #elMain {
+				flex: 0 0 auto;
+				max-width: 100%;
+			}
+			:host #elValueLine #elBrief {
+				flex: 0 1 auto;
+				overflow: hidden;
+				white-space: nowrap;
+				text-overflow: ellipsis;
+			}
 			
 			:host #elBtnToggleChildren:before {
 				content: '\\25e2';
@@ -218,12 +234,20 @@ common: {
 				/*padding-left: var(--indent);*/
 				/*text-indent: calc(-1 * var(--indent));*/
 			}
+			:host #elBrief {
+				display: inline;
+				font-style: italic;
+				opacity: var(--greyed-opacity);
+			}
 			:host-context(inspect-value) #elChildren {
 				/*padding-left: 0;*/ /* already spaced by #elWrapper */
 			}
 			:host([expanded]) #elChildren {
 				display: flex;
 				flex-direction: column;
+			}
+			:host([expanded]) #elBrief {
+				display: none;
 			}
 			
 			:host #elBtnShowMore {
@@ -304,10 +328,15 @@ common: {
 			
 			</style>
 			<span id="elWrapper">
-				<span id="elPropertyContainer"><span id="elInherited"></span><span id="elPropertyContents"><slot name="property"></slot></span>: </span>
-				<span id="elBtnGetter"></span>
-				<span id="elContainer">
-					<span id="elBtnToggleChildren"></span><span id="elContents"><slot></slot></span>
+				<span id="elValueLine">
+					<span id="elMain">
+						<span id="elPropertyContainer"><span id="elInherited"></span><span id="elPropertyContents"><slot name="property"></slot></span>: </span>
+						<span id="elBtnGetter"></span>
+						<span id="elContainer">
+							<span id="elBtnToggleChildren"></span><span id="elContents"><slot></slot></span>
+						</span>
+					</span>
+					<slot name="brief" id="elBrief"></slot>
 				</span>
 				<slot name="children" id="elChildren"></slot>
 				<span id="elBtnShowMore"></span>
@@ -570,25 +599,55 @@ common: {
 			/////////////////////////////////////////////
 			
 			renderValue() {
-				delete this[KEY_CHILDREN_RENDERED_LEVEL];
 				for (let i = this.childNodes.length - 1; i >= 0; i--) {
 					const node = this.childNodes[i];
 					if (!node.slot || node.slot === 'children') {
 						this.removeChild(node);
 					}
 				}
+				this.expanded = false;
+				delete this[KEY_CHILDREN_RENDERED_LEVEL];
 				const value = this.value;
 				const ivType = this.constructor.getIvType(value);
-				let displayValueNodes = this.constructor._generateValueView(value, ivType);
+				let nodes = this.constructor._generateValueView(value, ivType);
 				
 				this.shadowRoot.elWrapper.setAttribute('iv-i-type', ivType);
 				this.shadowRoot.elWrapper.toggleAttribute('iv-i-expandable', this.expandable);
 				
-				for (let node of displayValueNodes) {
+				for (let node of nodes) {
 					if (!(node instanceof Node)) {
 						node = document.createTextNode(String(node));
 					}
 					this.appendChild(node);
+				}
+				
+				this.renderBrief();
+			}
+			
+			renderBrief() {
+				const value = this.value;
+				const ivType = this.constructor.getIvType(value);
+				let briefNodes = this.constructor._generateValueBriefView(value, ivType);
+				this._setBrief(briefNodes);
+			}
+			
+			_setBrief(nodes) {
+				for (let i = this.childNodes.length - 1; i >= 0; i--) {
+					const node = this.childNodes[i];
+					if (node.slot === 'brief') {
+						this.removeChild(node);
+					}
+				}
+				if (nodes && nodes.length > 0) {
+					const elBrief = document.createElement('span');
+					elBrief.slot = 'brief';
+					for (let node of nodes) {
+						if (!(node instanceof Node)) {
+							node = document.createTextNode(String(node));
+						}
+						elBrief.appendChild(node);
+					}
+					this.appendChild(elBrief);
 				}
 			}
 			
@@ -653,11 +712,18 @@ common: {
 					, levelLimit + 1
 				);
 				let hasMore = false;
+				const renderedNames = new Set();
 				// const documentFragment = document.createDocumentFragment();
 				for (const descriptor of allDescriptors) {
 					if (descriptor.level >= levelLimit) {
 						hasMore = true;
 						break;
+					}
+					if (descriptor.hasOwnProperty('name')) {
+						if (renderedNames.has(descriptor.name)) {
+							continue;
+						}
+						renderedNames.add(descriptor.name);
 					}
 					if (descriptor.level < prevLevelLimit) {
 						// skip already rendered descriptors
@@ -684,7 +750,8 @@ common: {
 					return this.value;
 				}
 				catch (err) {
-					this.value = err;
+					// this.value = err;
+					this._setBrief([this.constructor.create(err)]);
 					// throw err;
 				}
 			}
@@ -748,6 +815,9 @@ common: {
 				else if (ivType === 'infotext') {
 					return [value.toString()];
 				}
+				else if (ivType === 'rawnodes') {
+					return value;
+				}
 				else if (ivType === 'getter') {
 					return [];
 				}
@@ -765,23 +835,6 @@ common: {
 							`${value.constructor.name}(${value.size})`,
 						];
 					}
-					else if (value instanceof Date) {
-						return [
-							`${value.constructor.name} {${isNaN(value) ? 'Invalid Date' : value.toISOString()}}`,
-						];
-					}
-					else if (value instanceof HTMLElement) {
-						try {
-							return [
-								`${value.constructor.name} <${value.tagName.toLowerCase()}>`,
-							];
-						}
-						catch (err) {
-							return [
-								`${value.constructor.name}`,
-							];
-						}
-					}
 					else {
 						return [(value.constructor || Object).name];
 					}
@@ -793,7 +846,7 @@ common: {
 					return [String(value) + 'n'];
 				}
 				else if (ivType === 'function') {
-					return this._generateValueViewFunction(value);
+					return [value.name];
 				}
 				else if (ivType === 'class') {
 					return [value.name];
@@ -815,8 +868,53 @@ common: {
 				return res;
 			}
 			
-			static _generateValueViewFunction(value) {
-				let res = value.name;
+			static _generateValueBriefView(value, ivType) {
+				if (ivType === 'error') {
+					return [String(value.message)];
+				}
+				else if (ivType === 'object') {
+					if (value instanceof Array) {
+						return [];
+					}
+					else if (value instanceof Set || value instanceof Map) {
+						return [];
+					}
+					else if (value instanceof Date) {
+						return [
+							isNaN(value) ? 'Invalid Date' : value.toISOString(),
+						];
+					}
+					else if (value instanceof HTMLElement) {
+						try {
+							return [
+								`<${value.tagName.toLowerCase()}>`,
+							];
+						}
+						catch (err) {
+							return [];
+						}
+					}
+					else if (value instanceof Promise) {
+						const done = new ValueWrapper();
+						done.set(new InfoText('Pending\u2026'));
+						value
+							.then(() => done.set(new InfoText('Resolved')))
+							.catch(() => done.set(new InfoText('Error')))
+						;
+						return [this.create(done)];
+					}
+					else {
+						return [];
+					}
+				}
+				else if (ivType === 'function') {
+					return this._generateValueBriefViewFunction(value)[0];
+				}
+				return undefined;
+			}
+			
+			static _generateValueBriefViewFunction(value) {
+				let res = '';
 				const m = /^[^\(]*\((.*)\)\s*(?:\{|=>)/.exec(value);
 				res += '(' + (!m ? '' : m[1]).trim() + ')';
 				return [res];

@@ -97,8 +97,11 @@ let recursiveGetterFunction = () => {
     const infoText = new InspectValue.InfoText(`Returning same getter as a result`);
     const valueWrapper = new InspectValue.ValueWrapper(infoText);
     setTimeout(() => {
-        valueWrapper.set(recursiveGetter);
+        valueWrapper.set(recursiveGetterFunction);
     }, 2000);
+    setTimeout(() => {
+        valueWrapper.set(recursiveGetter);
+    }, 4000);
     return valueWrapper;
 };
 let recursiveGetter = new InspectValue.Getter(recursiveGetterFunction);
