@@ -14,29 +14,35 @@ inspect-value {
 </style>
 </head>
 <body>
-<inspect-value-property>
-    Ololo<inspect-value slot="value">Mememe</inspect-value>
-</inspect-value-property>
+<inspect-value>Ololo Mememe</inspect-value>
 <script type="text/javascript">
 
-document.body.appendChild(InspectValue.create());
-document.body.appendChild(InspectValue.create(null));
-document.body.appendChild(InspectValue.create(true));
-document.body.appendChild(InspectValue.create(false));
-document.body.appendChild(InspectValue.create(0));
-document.body.appendChild(InspectValue.create(1234));
-document.body.appendChild(InspectValue.create(13461347123582458n));
-document.body.appendChild(InspectValue.create("Ololo"));
-// document.body.appendChild(InspectValue.create(window));
-document.body.appendChild(InspectValue.create([0, 1, "Mememe", 1234n]));
-document.body.appendChild(InspectValue.create(new Array(100).fill('long string').join(' ')));
-document.body.appendChild(InspectValue.create(new Set([1,2,3,4])));
+function add(...els) {
+    const row = document.createElement('div');
+    for (const el of els) {
+        row.appendChild(el);
+    }
+    document.body.appendChild(row);
+}
+
+add(InspectValue.create());
+add(InspectValue.create(null));
+add(InspectValue.create(true));
+add(InspectValue.create(false));
+add(InspectValue.create(0));
+add(InspectValue.create(1234));
+add(InspectValue.create(13461347123582458n));
+add(InspectValue.create("Ololo"));
+// add(InspectValue.create(window));
+add(InspectValue.create([0, 1, "Mememe", 1234n]));
+add(InspectValue.create(new Array(100).fill('long string').join(' ')));
+add(InspectValue.create(new Set([1,2,3,4])));
 var m = new Map();
 m.set({}, 'obj1');
 m.set([], 'arr');
 m.set({}, 'obj2');
-document.body.appendChild(InspectValue.create(m));
-document.body.appendChild(InspectValue.create({
+add(InspectValue.create(m));
+add(InspectValue.create({
     null: null,
     boolTrue: true,
     boolFalse: false,
@@ -48,32 +54,32 @@ document.body.appendChild(InspectValue.create({
     [Symbol('sym')]: 'Symbol is here',
     Boolean: new Boolean(false),
 }));
-document.body.appendChild(InspectValue.create([,,,,1234,5,6,7,8]));
-document.body.appendChild(InspectValue.create(new Date()));
-document.body.appendChild(InspectValue.create(new Date(NaN)));
-document.body.appendChild(InspectValue.create(window));
-document.body.appendChild(InspectValue.create(Symbol('sym')));
+add(InspectValue.create([,,,,1234,5,6,7,8]));
+add(InspectValue.create(new Date()));
+add(InspectValue.create(new Date(NaN)));
+add(InspectValue.create(window));
+add(InspectValue.create(Symbol('sym')));
 
 class Ololo {
     get ololo() {
         return 'mememe';
     }
 }
-document.body.appendChild(InspectValue.create(new Ololo()));
+add(InspectValue.create(new Ololo()));
 
 const named = (param) => '1234' + param;
-document.body.appendChild(InspectValue.create(named));
-document.body.appendChild(InspectValue.create((param) => '5678' + param));
-document.body.appendChild(InspectValue.create(new Error(`Test error`)));
+add(InspectValue.create(named));
+add(InspectValue.create((param) => '5678' + param));
+add(InspectValue.create(new Error(`Test error`)));
 
 try {
     1n / 0n;
 }
 catch (err) {
-    document.body.appendChild(InspectValue.create(err));
+    add(InspectValue.create(err));
 }
 
-document.body.appendChild(InspectValueProperty.create(new InspectValue.Getter(() => {
+add(InspectValue.create(new InspectValue.Getter(() => {
     return new InspectValue.InfoText(`You've clicked it`);
 }), 'inline getter'));
 
@@ -82,36 +88,42 @@ let recursiveGetterFunction = () => {
     return recursiveGetter;
 };
 let recursiveGetter = new InspectValue.Getter(recursiveGetterFunction);
-document.body.appendChild(InspectValue.create(recursiveGetterFunction));
-document.body.appendChild(InspectValueProperty.create(recursiveGetter, 'recursive inline getter'));
+add(InspectValue.create(recursiveGetterFunction));
+add(InspectValue.create(recursiveGetter, 'recursive inline getter'));
 
 let valueWrapper = new InspectValue.ValueWrapper(0);
-document.body.appendChild(InspectValue.create(valueWrapper));
+add(InspectValue.create(valueWrapper));
 valueWrapper._tmr = setInterval(() => { valueWrapper.set(valueWrapper.get() + 1) }, 1000);
 
 (async () => {
     let asyncFunction = async (a) => {
-        await new Promise(resolve => setTimeout(resolve, 5000));
         a = await a;
+        await new Promise(resolve => setTimeout(resolve, 5000));
         if (isNaN(a)) {
             throw new Error(`Argument 'a' is NaN`);
         }
         return a + 1
     };
-    document.body.appendChild(InspectValue.create(asyncFunction));
+    add(InspectValue.create(asyncFunction));
     
     const prom0 = asyncFunction(0);
-    document.body.appendChild(InspectValue.create(prom0));
+    add(InspectValue.create(prom0));
     
     const prom1 = asyncFunction(asyncFunction(0));
-    document.body.appendChild(InspectValue.create(prom1));
+    add(InspectValue.create(prom1));
     const res1 = await prom1;
-    document.body.appendChild(InspectValue.create(res1));
+    add(InspectValue.create(res1));
     
     const prom2 = asyncFunction(NaN);
-    document.body.appendChild(InspectValue.create(prom2));
-    const res2 = await prom2;
-    document.body.appendChild(InspectValue.create(res2));
+    add(InspectValue.create(prom2));
+    try {
+        // this would result in an error
+        const res2 = await prom2;
+        add(InspectValue.create(res2));
+    }
+    catch (err) {
+        console.warn(`Expected error`, err);
+    }
 })();
 
 

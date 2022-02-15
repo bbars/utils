@@ -51,275 +51,6 @@ common: {
 		}
 	}
 	
-	InspectValueProperty: {
-		const TPL_BASE = document.createElement('template');
-		TPL_BASE.innerHTML = `
-			<style>
-			
-			:host {
-				display: block;
-				font-family: monospace;
-				cursor: default;
-				--greyed-opacity: 0.7;
-				--color-basic: #a2a;
-			}
-			:host #elWrapper {
-				margin-left: 2em;
-				text-indent: -2em;
-			}
-			:host([unnamed]) #elContainer {
-				display: none;
-			}
-			
-			:host([basic]) slot:not([name]) {
-				color: var(--color-basic);
-			}
-			:host([hidden]) #elContainer {
-				opacity: var(--greyed-opacity);
-			}
-			
-			:host([enclosed]) #elContents:before {
-				content: '[';
-			}
-			:host([enclosed]) #elContents:after {
-				content: ']';
-			}
-			
-			:host([virtual]:not([hidden])) #elContents:before,
-			:host([virtual]:not([hidden])) #elContents:after {
-				opacity: var(--greyed-opacity);
-			}
-			:host([virtual]) #elContents:before {
-				content: '[[';
-			}
-			:host([virtual]) #elContents:after {
-				content: ']]';
-			}
-			
-			:host #elInherited {
-				margin-right: 0.5em;
-				display: none;
-			}
-			:host #elInherited:before {
-				content: '\\21e1';
-			}
-			:host([inherited]) #elInherited {
-				display: inline;
-			}
-			
-			:host slot[name="value"] {
-				display: inline;
-				vertical-align: top;
-				vertical-align: text-top;
-			}
-			
-			:host slot::slotted(inspect-value) {
-				display: inline !important;
-			}
-			:host slot[name="value"]::slotted(inspect-value) {
-				display: inline !important;
-			}
-			
-			</style>
-			<div id="elWrapper">
-				<span id="elContainer"><span id="elInherited"></span><span id="elContents"><slot></slot></span>: </span><slot name="value"></slot>
-			</div>
-		`;
-		TPL_BASE.innerHTML = TPL_BASE.innerHTML.trim().replace(/>[\t\n]+</g, '><');
-		
-		class InspectValueProperty extends HTMLElement {
-			[KEY_IGNORE_ATTRIBUTE_CHANGES] = 0;
-			
-			static get observedAttributes() {
-				return ['unnamed', 'enclosed', 'basic', 'inherited', 'virtual', 'hidden'];
-			}
-			
-			static get observedBoolAttributes() {
-				return ['unnamed', 'enclosed', 'basic', 'inherited', 'virtual', 'hidden'];
-			}
-			
-			constructor() {
-				super();
-				this.attachShadow({ mode: 'open' });
-				this.shadowRoot.appendChild(TPL_BASE.content.cloneNode(true));
-				this.shadowRoot.elContainer = this.shadowRoot.getElementById('elContainer');
-			}
-			
-			static create(value, propertyName) {
-				const res = new this();
-				res.value = value;
-				if (arguments.length > 1) {
-					res.propertyName = propertyName;
-				}
-				else {
-					res.unnamed = true;
-				}
-				return res;
-			}
-			
-			get propertyName() {
-				return this[KEY_PROPERTY_NAME];
-			}
-			set propertyName(propertyName) {
-				this.getPropertyNameNodes().forEach((node) => {
-					this.removeChild(node);
-				});
-				this[KEY_PROPERTY_NAME] = propertyName;
-				const propertyNameIvType = InspectValue.getIvType(propertyName);
-				if (this.unnamed) {
-					this.unnamed = false;
-				}
-				
-				if (propertyNameIvType === 'string') {
-					this.enclosed = false;
-					
-					if (propertyName.trim() === '') {
-						this.appendChild(InspectValue.create(propertyName));
-						this.basic = false;
-					}
-					else {
-						this.appendChild(document.createTextNode(propertyName));
-						this.basic = true;
-					}
-				}
-				else {
-					this.enclosed = true;
-					this.appendChild(InspectValue.create(propertyName));
-					this.basic = false;
-				}
-			}
-			
-			get value() {
-				return this[KEY_VALUE];
-			}
-			set value(value) {
-				this.getValueNodes().forEach((node) => {
-					this.removeChild(node);
-				});
-				this[KEY_VALUE] = value;
-				const elPropertyValue = InspectValue.create(value);
-				elPropertyValue.slot = 'value';
-				this.appendChild(elPropertyValue);
-			}
-			
-			getPropertyNameNodes() {
-				const res = [];
-				for (const node of this.childNodes) {
-					if (!node.slot) {
-						res.push(node);
-					}
-				}
-				return res;
-			}
-			
-			getValueNodes() {
-				const res = [];
-				for (const node of this.childNodes) {
-					if (node.slot === 'value') {
-						res.push(node);
-					}
-				}
-				return res;
-			}
-			
-			static fromDescriptor(descriptor, parentValue) {
-				const value = typeof descriptor.get === 'function'
-					? new Getter(descriptor.get, parentValue)
-					: descriptor.value
-				;
-				const res = descriptor.hasOwnProperty('name')
-					? InspectValueProperty.create(value, descriptor.name)
-					: InspectValueProperty.create(value)
-				;
-				res.inherited = descriptor.inherited || false;
-				res.virtual = descriptor.virtual || false;
-				res.hidden = !descriptor.enumerable && !descriptor.unhide;
-				return res;
-			}
-			
-			attributeChangedCallback(name, oldValue, newValue) {
-				if (this[KEY_IGNORE_ATTRIBUTE_CHANGES]) {
-					return;
-				}
-				if (oldValue === newValue) {
-					return;
-				}
-				else if (this.constructor.observedBoolAttributes.indexOf(name) > -1) {
-					this[name] = newValue || newValue === '' ? true : false;
-				}
-				else if (this.constructor.observedAttributes.indexOf(name) > -1) {
-					this[name] = newValue;
-				}
-			}
-			
-			get unnamed() {
-				return this.hasAttribute('unnamed', false);
-			}
-			set unnamed(unnamed) {
-				unnamed = !!unnamed;
-				this[KEY_IGNORE_ATTRIBUTE_CHANGES]++;
-				this.toggleAttribute('unnamed', unnamed);
-				if (!unnamed) {
-					this.propertyName = this.propertyName;
-				}
-				this[KEY_IGNORE_ATTRIBUTE_CHANGES]--;
-			}
-			
-			get enclosed() {
-				return this.hasAttribute('enclosed', false);
-			}
-			set enclosed(enclosed) {
-				enclosed = !!enclosed;
-				this[KEY_IGNORE_ATTRIBUTE_CHANGES]++;
-				this.toggleAttribute('enclosed', enclosed);
-				this[KEY_IGNORE_ATTRIBUTE_CHANGES]--;
-			}
-			
-			get basic() {
-				return this.hasAttribute('basic', false);
-			}
-			set basic(basic) {
-				basic = !!basic;
-				this[KEY_IGNORE_ATTRIBUTE_CHANGES]++;
-				this.toggleAttribute('basic', basic);
-				this[KEY_IGNORE_ATTRIBUTE_CHANGES]--;
-			}
-			
-			get inherited() {
-				return this.hasAttribute('inherited', false);
-			}
-			set inherited(inherited) {
-				inherited = !!inherited;
-				this[KEY_IGNORE_ATTRIBUTE_CHANGES]++;
-				this.toggleAttribute('inherited', inherited);
-				this[KEY_IGNORE_ATTRIBUTE_CHANGES]--;
-			}
-			
-			get virtual() {
-				return this.hasAttribute('virtual', false);
-			}
-			set virtual(virtual) {
-				virtual = !!virtual;
-				this[KEY_IGNORE_ATTRIBUTE_CHANGES]++;
-				this.toggleAttribute('virtual', virtual);
-				this[KEY_IGNORE_ATTRIBUTE_CHANGES]--;
-			}
-			
-			get hidden() {
-				return this.hasAttribute('hidden', false);
-			}
-			set hidden(hidden) {
-				hidden = !!hidden;
-				this[KEY_IGNORE_ATTRIBUTE_CHANGES]++;
-				this.toggleAttribute('hidden', hidden);
-				this[KEY_IGNORE_ATTRIBUTE_CHANGES]--;
-			}
-		}
-		
-		window.InspectValueProperty = InspectValueProperty;
-		window.customElements.define('inspect-value-property', InspectValueProperty);
-	}
-	
 	InspectValue: {
 		const TPL_BASE = document.createElement('template');
 		TPL_BASE.innerHTML = `
@@ -329,7 +60,8 @@ common: {
 				display: inline;
 				font-family: monospace;
 				cursor: default;
-				--max-string-length: 500;
+				--indent: 2em;
+				--color-basic-property: #a2a;
 				--color-undefined: #666;
 				--color-boolean: #a2a;
 				--color-null: #666;
@@ -345,6 +77,7 @@ common: {
 				--color-getter: #f0d;
 				--content-getter: '(get)';
 				--content-more: '\\2219\\2219\\2219';
+				--greyed-opacity: 0.7;
 			}
 			:host #elWrapper {
 			}
@@ -353,6 +86,7 @@ common: {
 			
 			:host #elBtnToggleChildren:before {
 				content: '\\25e2';
+				/* background-image: url('data:image/svg+xml;utf8,<svg width="20" height="20" fill="currentColor" version="1.1" xmlns="http://www.w3.org/2000/svg"><path d="M 10 0  L 20 10  L 10 20  Z" /></svg>'); */
 				font-style: initial;
 				text-indent: 0;
 				font-size: 0.8em;
@@ -474,11 +208,18 @@ common: {
 			}
 			
 			:host #elChildren {
-				margin-left: 2em;
 				display: none;
 			}
-			:host-context(inspect-value-property) #elChildren {
-				margin-left: 0; /* already spaced by inspect-value-property */
+			
+			:host #elChildren {
+				padding-left: var(--indent);
+			}
+			:host #elWrapper {
+				/*padding-left: var(--indent);*/
+				/*text-indent: calc(-1 * var(--indent));*/
+			}
+			:host-context(inspect-value) #elChildren {
+				/*padding-left: 0;*/ /* already spaced by #elWrapper */
 			}
 			:host([expanded]) #elChildren {
 				display: flex;
@@ -506,8 +247,64 @@ common: {
 				display: inline-block;
 			}
 			
+			/* Property: */
+			
+			:host(:not([named])) #elPropertyContainer {
+				display: none;
+			}
+			
+			:host([basic]) slot[name="property"] {
+				color: var(--color-basic-property);
+			}
+			:host([hidden]) #elPropertyContainer {
+				opacity: var(--greyed-opacity);
+			}
+			
+			:host([enclosed]) #elPropertyContents:before {
+				content: '[';
+			}
+			:host([enclosed]) #elPropertyContents:after {
+				content: ']';
+			}
+			
+			:host([virtual]:not([hidden])) #elPropertyContents:before,
+			:host([virtual]:not([hidden])) #elPropertyContents:after {
+				opacity: var(--greyed-opacity);
+			}
+			:host([virtual]) #elPropertyContents:before {
+				content: '[[';
+			}
+			:host([virtual]) #elPropertyContents:after {
+				content: ']]';
+			}
+			
+			:host #elInherited {
+				margin-right: 0.5em;
+				display: none;
+			}
+			:host #elInherited:before {
+				content: '\\21e1';
+			}
+			:host([inherited]) #elInherited {
+				display: inline;
+			}
+			
+			:host slot[name="value"] {
+				display: inline;
+				vertical-align: top;
+				vertical-align: text-top;
+			}
+			
+			/*:host slot::slotted(inspect-value) {
+				display: inline !important;
+			}*/
+			:host slot[name="property"]::slotted(inspect-value) {
+				display: inline !important;
+			}
+			
 			</style>
 			<span id="elWrapper">
+				<span id="elPropertyContainer"><span id="elInherited"></span><span id="elPropertyContents"><slot name="property"></slot></span>: </span>
 				<span id="elBtnGetter"></span>
 				<span id="elContainer">
 					<span id="elBtnToggleChildren"></span><span id="elContents"><slot></slot></span>
@@ -522,11 +319,11 @@ common: {
 			[KEY_IGNORE_ATTRIBUTE_CHANGES] = 0;
 			
 			static get observedAttributes() {
-				return ['disabled', 'expanded'];
+				return ['disabled', 'expanded', 'named', 'enclosed', 'basic', 'inherited', 'virtual', 'hidden'];
 			}
 			
 			static get observedBoolAttributes() {
-				return ['disabled', 'expanded'];
+				return ['disabled', 'expanded', 'named', 'enclosed', 'basic', 'inherited', 'virtual', 'hidden'];
 			}
 			
 			constructor() {
@@ -546,9 +343,30 @@ common: {
 				this.$$onValueWrapperChange = this.$$onValueWrapperChange.bind(this);
 			}
 			
-			static create(value) {
+			static create(value, propertyName) {
 				const res = new this();
 				res.value = value;
+				if (arguments.length > 1) {
+					res.propertyName = propertyName;
+				}
+				else {
+					res.named = false;
+				}
+				return res;
+			}
+			
+			static fromDescriptor(descriptor, parentValue) {
+				const value = typeof descriptor.get === 'function'
+					? new Getter(descriptor.get, parentValue)
+					: descriptor.value
+				;
+				const res = descriptor.hasOwnProperty('name')
+					? this.create(value, descriptor.name)
+					: this.create(value)
+				;
+				res.inherited = descriptor.inherited || false;
+				res.virtual = descriptor.virtual || false;
+				res.hidden = !descriptor.enumerable && !descriptor.unhide;
 				return res;
 			}
 			
@@ -567,7 +385,78 @@ common: {
 					value.addListener(this.$$onValueWrapperChange);
 				}
 				this.expanded = false;
-				this.render();
+				this.renderValue();
+			}
+			
+			get propertyName() {
+				return this[KEY_PROPERTY_NAME];
+			}
+			set propertyName(propertyName) {
+				this[KEY_PROPERTY_NAME] = propertyName;
+				this.renderPropertyName();
+			}
+			
+			get named() {
+				return this.hasAttribute('named', false);
+			}
+			set named(named) {
+				named = !!named;
+				this[KEY_IGNORE_ATTRIBUTE_CHANGES]++;
+				this.toggleAttribute('named', named);
+				if (named) {
+					this.propertyName = this.propertyName;
+				}
+				this[KEY_IGNORE_ATTRIBUTE_CHANGES]--;
+			}
+			
+			get enclosed() {
+				return this.hasAttribute('enclosed', false);
+			}
+			set enclosed(enclosed) {
+				enclosed = !!enclosed;
+				this[KEY_IGNORE_ATTRIBUTE_CHANGES]++;
+				this.toggleAttribute('enclosed', enclosed);
+				this[KEY_IGNORE_ATTRIBUTE_CHANGES]--;
+			}
+			
+			get basic() {
+				return this.hasAttribute('basic', false);
+			}
+			set basic(basic) {
+				basic = !!basic;
+				this[KEY_IGNORE_ATTRIBUTE_CHANGES]++;
+				this.toggleAttribute('basic', basic);
+				this[KEY_IGNORE_ATTRIBUTE_CHANGES]--;
+			}
+			
+			get inherited() {
+				return this.hasAttribute('inherited', false);
+			}
+			set inherited(inherited) {
+				inherited = !!inherited;
+				this[KEY_IGNORE_ATTRIBUTE_CHANGES]++;
+				this.toggleAttribute('inherited', inherited);
+				this[KEY_IGNORE_ATTRIBUTE_CHANGES]--;
+			}
+			
+			get virtual() {
+				return this.hasAttribute('virtual', false);
+			}
+			set virtual(virtual) {
+				virtual = !!virtual;
+				this[KEY_IGNORE_ATTRIBUTE_CHANGES]++;
+				this.toggleAttribute('virtual', virtual);
+				this[KEY_IGNORE_ATTRIBUTE_CHANGES]--;
+			}
+			
+			get hidden() {
+				return this.hasAttribute('hidden', false);
+			}
+			set hidden(hidden) {
+				hidden = !!hidden;
+				this[KEY_IGNORE_ATTRIBUTE_CHANGES]++;
+				this.toggleAttribute('hidden', hidden);
+				this[KEY_IGNORE_ATTRIBUTE_CHANGES]--;
 			}
 			
 			get expandable() {
@@ -609,7 +498,7 @@ common: {
 				}
 				this.expanded = true;
 				let res = 1;
-				const childrenInspectValueElements = this.querySelectorAll(':scope > inspect-value, :scope > inspect-value-property > inspect-value');
+				const childrenInspectValueElements = this.querySelectorAll(':scope > inspect-value');
 				for (const child of childrenInspectValueElements) {
 					if (!child.expandable) {
 						continue;
@@ -680,10 +569,13 @@ common: {
 			/////////////////////////////////////////////
 			/////////////////////////////////////////////
 			
-			render() {
+			renderValue() {
 				delete this[KEY_CHILDREN_RENDERED_LEVEL];
-				while (this.childNodes[0]) {
-					this.removeChild(this.childNodes[0]);
+				for (let i = this.childNodes.length - 1; i >= 0; i--) {
+					const node = this.childNodes[i];
+					if (!node.slot || node.slot === 'children') {
+						this.removeChild(node);
+					}
 				}
 				const value = this.value;
 				const ivType = this.constructor.getIvType(value);
@@ -698,6 +590,43 @@ common: {
 					}
 					this.appendChild(node);
 				}
+			}
+			
+			renderPropertyName() {
+				const propertyName = this.propertyName;
+				for (let i = this.childNodes.length - 1; i >= 0; i--) {
+					const node = this.childNodes[i];
+					if (node.slot === 'property') {
+						this.removeChild(node);
+					}
+				}
+				const propertyNameIvType = InspectValue.getIvType(propertyName);
+				if (!this.named) {
+					this.named = true;
+					return; // render would restart within setter 'named'
+				}
+				
+				let elPropertyName;
+				if (propertyNameIvType === 'string') {
+					this.enclosed = false;
+					
+					if (propertyName.trim() === '') {
+						elPropertyName = InspectValue.create(propertyName);
+						this.basic = false;
+					}
+					else {
+						elPropertyName = document.createElement('span');
+						elPropertyName.textContent = propertyName;
+						this.basic = true;
+					}
+				}
+				else {
+					elPropertyName = InspectValue.create(propertyName);
+					this.enclosed = true;
+					this.basic = false;
+				}
+				elPropertyName.slot = 'property';
+				this.appendChild(elPropertyName);
 			}
 			
 			renderChildren(levelLimit) {
@@ -734,7 +663,7 @@ common: {
 						// skip already rendered descriptors
 						continue;
 					}
-					const elProperty = InspectValueProperty.fromDescriptor(descriptor, this.value);
+					const elProperty = this.constructor.fromDescriptor(descriptor, this.value);
 					elProperty.slot = 'children';
 					// elProperty._descriptor = descriptor; // debug
 					this.appendChild(elProperty);
@@ -758,6 +687,26 @@ common: {
 					this.value = err;
 					// throw err;
 				}
+			}
+			
+			getPropertyNameNodes() {
+				const res = [];
+				for (const node of this.childNodes) {
+					if (node.slot === 'property') {
+						res.push(node);
+					}
+				}
+				return res;
+			}
+			
+			getValueNodes() {
+				const res = [];
+				for (const node of this.childNodes) {
+					if (!node.slot) {
+						res.push(node);
+					}
+				}
+				return res;
 			}
 			
 			/////////////////////////////////////////////
@@ -789,7 +738,7 @@ common: {
 			}
 			
 			$$onValueWrapperChange(value, valueWrapper) {
-				this.render();
+				this.renderValue();
 			}
 			
 			static _generateValueView(value, ivType) {
