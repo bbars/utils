@@ -155,6 +155,17 @@ valueWrapper._tmr = setInterval(() => { valueWrapper.set(valueWrapper.get() + 1)
 const timeEnd = new Date();
 add(InspectValue.create(timeEnd, 'timeEnd'), InspectValue.create(timeEnd - timeStart, 'renderDuration'));
 
+const proxy = new Proxy({}, {
+    get(target, key) {
+        return target[key];
+    },
+    set(target, key, value) {
+        return target[key] = value;
+    },
+});
+proxy.a = 'a';
+add(InspectValue.create(proxy));
+
 </script>
 </body>
 </html>

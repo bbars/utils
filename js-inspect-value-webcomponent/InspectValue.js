@@ -224,7 +224,7 @@ common: {
 				background: #d32;
 			}
 			
-			:host #elChildren {
+			:host #elSlotChildren {
 				display: none;
 			}
 			:host #elSlotBrief {
@@ -237,17 +237,17 @@ common: {
 				display: none;
 			}
 			
-			:host #elChildren {
+			:host #elSlotChildren {
 				padding-left: var(--indent);
 			}
 			:host #elWrapper {
 				/*padding-left: var(--indent);*/
 				/*text-indent: calc(-1 * var(--indent));*/
 			}
-			:host-context(inspect-value) #elChildren {
+			:host-context(inspect-value) #elSlotChildren {
 				/*padding-left: 0;*/ /* already spaced by #elWrapper */
 			}
-			:host([expanded]) #elChildren {
+			:host([expanded]) #elSlotChildren {
 				display: flex;
 				flex-direction: column;
 			}
@@ -335,12 +335,12 @@ common: {
 						<span id="elPropertyContainer"><span id="elInherited"></span><span id="elPropertyContents"><slot name="property" id="elSlotProperty"></slot></span>: </span>
 						<span id="elBtnGetter"></span>
 						<span id="elContainer">
-							<span id="elBtnToggleChildren"></span><span id="elContents"><slot></slot></span>
+							<span id="elBtnToggleChildren"></span><span id="elContents"><slot id="elSlot"></slot></span>
 						</span>
 					</span>
 					<slot name="brief" id="elSlotBrief"></slot>
 				</span>
-				<slot name="children" id="elChildren"></slot>
+				<slot name="children" id="elSlotChildren"></slot>
 				<span id="elBtnShowMore"></span>
 			</span>
 		`;
@@ -364,8 +364,10 @@ common: {
 				this.shadowRoot.elWrapper = this.shadowRoot.getElementById('elWrapper');
 				this.shadowRoot.elContainer = this.shadowRoot.getElementById('elContainer');
 				this.shadowRoot.elBtnShowMore = this.shadowRoot.getElementById('elBtnShowMore');
+				this.shadowRoot.elSlot = this.shadowRoot.getElementById('elSlot');
 				this.shadowRoot.elSlotProperty = this.shadowRoot.getElementById('elSlotProperty');
 				this.shadowRoot.elSlotBrief = this.shadowRoot.getElementById('elSlotBrief');
+				this.shadowRoot.elSlotChildren = this.shadowRoot.getElementById('elSlotChildren');
 				this.shadowRoot.elBtnGetter = this.shadowRoot.getElementById('elBtnGetter');
 				this.shadowRoot.elBtnGetter.addEventListener('click', (event) => {
 					if (this.disabled) {
@@ -377,6 +379,38 @@ common: {
 				this.$$onSlotChange = this.$$onSlotChange.bind(this);
 				this.shadowRoot.elSlotProperty.addEventListener('slotchange', this.$$onSlotChange);
 				this.shadowRoot.elSlotBrief.addEventListener('slotchange', this.$$onSlotChange);
+			}
+			
+			connectedCallback() {
+				this.shadowRoot.$$onClick = this.$$onClick.bind(this);
+				this.shadowRoot.$$onClickShowMore = this.$$onClickShowMore.bind(this);
+				
+				this.shadowRoot.elContainer.addEventListener('click', this.shadowRoot.$$onClick);
+				this.shadowRoot.elBtnShowMore.addEventListener('click', this.shadowRoot.$$onClickShowMore);
+			}
+			disconnectedCallback() {
+				this.shadowRoot.elContainer.removeEventListener('click', this.shadowRoot.$$onClick);
+				this.shadowRoot.elBtnShowMore.removeEventListener('click', this.shadowRoot.$$onClickShowMore);
+			}
+			
+			attributeChangedCallback(name, oldValue, newValue) {
+				if (this[KEY_IGNORE_ATTRIBUTE_CHANGES]) {
+					return;
+				}
+				if (oldValue === newValue) {
+					return;
+				}
+				else if (this.constructor.observedBoolAttributes.indexOf(name) > -1) {
+					oldValue = oldValue || oldValue === '' ? true : false;
+					newValue = newValue || newValue === '' ? true : false;
+					if (oldValue === newValue) {
+						return;
+					}
+					this[name] = newValue;
+				}
+				else if (this.constructor.observedAttributes.indexOf(name) > -1) {
+					this[name] = newValue;
+				}
 			}
 			
 			static create(value, propertyName) {
@@ -413,6 +447,20 @@ common: {
 				return res;
 			}
 			
+			get rawValue() {
+				return this[KEY_VALUE];
+			}
+			set rawValue(rawValue) {
+				if (this[KEY_VALUE] instanceof ValueWrapper) {
+					this[KEY_VALUE].removeListener(this.$$onValueWrapperChange);
+				}
+				this[KEY_VALUE] = rawValue;
+				if (rawValue instanceof ValueWrapper) {
+					rawValue.addListener(this.$$onValueWrapperChange);
+				}
+				this.renderValue();
+			}
+			
 			get value() {
 				return this[KEY_VALUE] instanceof ValueWrapper
 					? this[KEY_VALUE].get()
@@ -420,15 +468,7 @@ common: {
 				;
 			}
 			set value(value) {
-				if (this[KEY_VALUE] instanceof ValueWrapper) {
-					this[KEY_VALUE].removeListener(this.$$onValueWrapperChange);
-				}
-				this[KEY_VALUE] = value;
-				if (value instanceof ValueWrapper) {
-					value.addListener(this.$$onValueWrapperChange);
-				}
-				this.expanded = false;
-				this.renderValue();
+				this.rawValue = value;
 			}
 			
 			get propertyName() {
@@ -439,14 +479,18 @@ common: {
 				this.renderPropertyName();
 			}
 			
+			get disabled() {
+				return this.hasAttribute('disabled');
+			}
+			set disabled(disabled) {
+				this._toggleAttributeQuiet('disabled', !!disabled);
+			}
+			
 			get enclosed() {
 				return this.hasAttribute('enclosed', false);
 			}
 			set enclosed(enclosed) {
-				enclosed = !!enclosed;
-				this[KEY_IGNORE_ATTRIBUTE_CHANGES]++;
-				this.toggleAttribute('enclosed', enclosed);
-				this[KEY_IGNORE_ATTRIBUTE_CHANGES]--;
+				this._toggleAttributeQuiet('enclosed', !!enclosed);
 			}
 			
 			get basic() {
@@ -454,39 +498,28 @@ common: {
 			}
 			set basic(basic) {
 				basic = !!basic;
-				this[KEY_IGNORE_ATTRIBUTE_CHANGES]++;
-				this.toggleAttribute('basic', basic);
-				this[KEY_IGNORE_ATTRIBUTE_CHANGES]--;
+				this._toggleAttributeQuiet('basic', basic);
 			}
 			
 			get inherited() {
 				return this.hasAttribute('inherited', false);
 			}
 			set inherited(inherited) {
-				inherited = !!inherited;
-				this[KEY_IGNORE_ATTRIBUTE_CHANGES]++;
-				this.toggleAttribute('inherited', inherited);
-				this[KEY_IGNORE_ATTRIBUTE_CHANGES]--;
+				this._toggleAttributeQuiet('inherited', !!inherited);
 			}
 			
 			get virtual() {
 				return this.hasAttribute('virtual', false);
 			}
 			set virtual(virtual) {
-				virtual = !!virtual;
-				this[KEY_IGNORE_ATTRIBUTE_CHANGES]++;
-				this.toggleAttribute('virtual', virtual);
-				this[KEY_IGNORE_ATTRIBUTE_CHANGES]--;
+				this._toggleAttributeQuiet('virtual', !!virtual);
 			}
 			
 			get hidden() {
 				return this.hasAttribute('hidden', false);
 			}
 			set hidden(hidden) {
-				hidden = !!hidden;
-				this[KEY_IGNORE_ATTRIBUTE_CHANGES]++;
-				this.toggleAttribute('hidden', hidden);
-				this[KEY_IGNORE_ATTRIBUTE_CHANGES]--;
+				this._toggleAttributeQuiet('hidden', !!hidden);
 			}
 			
 			get simple() {
@@ -494,9 +527,7 @@ common: {
 			}
 			set simple(simple) {
 				simple = !!simple;
-				this[KEY_IGNORE_ATTRIBUTE_CHANGES]++;
-				this.toggleAttribute('simple', simple);
-				this[KEY_IGNORE_ATTRIBUTE_CHANGES]--;
+				this._toggleAttributeQuiet('simple', simple);
 				if (!simple) {
 					this.renderBrief();
 				}
@@ -515,76 +546,20 @@ common: {
 			}
 			set expanded(expanded) {
 				expanded = !!expanded;
+				const prevExpanded = this.hasAttribute('expanded');
+				this._toggleAttributeQuiet('expanded', expanded);
+				if (expanded && !prevExpanded) {
+					this.expand();
+				}
+			}
+			
+			_toggleAttributeQuiet(...args) {
 				this[KEY_IGNORE_ATTRIBUTE_CHANGES]++;
-				this.toggleAttribute('expanded', expanded);
+				try {
+					this.toggleAttribute(...args);
+				}
+				finally {
 				this[KEY_IGNORE_ATTRIBUTE_CHANGES]--;
-				if (expanded) {
-					let level = 1;
-					if (level < this[KEY_CHILDREN_RENDERED_LEVEL]) {
-						level = this[KEY_CHILDREN_RENDERED_LEVEL];
-					}
-					const value = this.value;
-					if (value != null && value.constructor !== Object && value.constructor !== Array) {
-						level = Math.max(level, 2);
-					}
-					this.renderChildren(level);
-				}
-			}
-			
-			expand(depth) {
-				if (depth > 0xfff) {
-					throw new Error(`Value for 'depth' is too large`);
-				}
-				if (depth <= 0) {
-					this.expanded = false;
-					return;
-				}
-				this.expanded = true;
-				let res = 1;
-				const childrenInspectValueElements = this.querySelectorAll(':scope > inspect-value');
-				for (const child of childrenInspectValueElements) {
-					if (!child.expandable) {
-						continue;
-					}
-					res += child.expand(depth - 1);
-				}
-				return res;
-			}
-			
-			connectedCallback() {
-				this.shadowRoot.$$onClick = this.$$onClick.bind(this);
-				this.shadowRoot.$$onClickShowMore = this.$$onClickShowMore.bind(this);
-				
-				this.shadowRoot.elContainer.addEventListener('click', this.shadowRoot.$$onClick);
-				this.shadowRoot.elBtnShowMore.addEventListener('click', this.shadowRoot.$$onClickShowMore);
-			}
-			disconnectedCallback() {
-				this.shadowRoot.elContainer.removeEventListener('click', this.shadowRoot.$$onClick);
-				this.shadowRoot.elBtnShowMore.removeEventListener('click', this.shadowRoot.$$onClickShowMore);
-			}
-			
-			get disabled() {
-				return this.hasAttribute('disabled');
-			}
-			set disabled(value) {
-				value = !!value;
-				this[KEY_IGNORE_ATTRIBUTE_CHANGES]++;
-				this.toggleAttribute('disabled', value);
-				this[KEY_IGNORE_ATTRIBUTE_CHANGES]--;
-			}
-			
-			attributeChangedCallback(name, oldValue, newValue) {
-				if (this[KEY_IGNORE_ATTRIBUTE_CHANGES]) {
-					return;
-				}
-				if (oldValue === newValue) {
-					return;
-				}
-				else if (this.constructor.observedBoolAttributes.indexOf(name) > -1) {
-					this[name] = newValue || newValue === '' ? true : false;
-				}
-				else if (this.constructor.observedAttributes.indexOf(name) > -1) {
-					this[name] = newValue;
 				}
 			}
 			
@@ -619,8 +594,6 @@ common: {
 						this.removeChild(node);
 					}
 				}
-				this.expanded = false;
-				delete this[KEY_CHILDREN_RENDERED_LEVEL];
 				const value = this.value;
 				const ivType = this.constructor.getIvType(value);
 				let nodes = this.constructor._generateValueView(value, ivType);
@@ -633,6 +606,11 @@ common: {
 						node = document.createTextNode(String(node));
 					}
 					this.appendChild(node);
+				}
+				
+				delete this[KEY_CHILDREN_RENDERED_LEVEL];
+				if (this.expanded) {
+					this.expand(); // re-render
 				}
 				
 				if (!this.simple) {
@@ -648,11 +626,8 @@ common: {
 			}
 			
 			_setBrief(nodes) {
-				for (let i = this.childNodes.length - 1; i >= 0; i--) {
-					const node = this.childNodes[i];
-					if (node.slot === 'brief') {
-						this.removeChild(node);
-					}
+				for (const el of this.shadowRoot.elSlotBrief.assignedNodes()) {
+					el.parentElement.removeChild(el);
 				}
 				if (nodes && nodes.length > 0) {
 					const elBrief = document.createElement('span');
@@ -669,11 +644,8 @@ common: {
 			
 			renderPropertyName() {
 				const propertyName = this.propertyName;
-				for (let i = this.childNodes.length - 1; i >= 0; i--) {
-					const node = this.childNodes[i];
-					if (node.slot === 'property') {
-						this.removeChild(node);
-					}
+				for (const el of this.shadowRoot.elSlotProperty.assignedNodes()) {
+					el.parentElement.removeChild(el);
 				}
 				const propertyNameIvType = InspectValue.getIvType(propertyName);
 				
@@ -712,46 +684,72 @@ common: {
 				}
 				if (levelLimit < prevLevelLimit) {
 					prevLevelLimit = 0; // reset
-					for (let i = this.children.length - 1; i >= 0; i--) {
-						const child = this.children[i];
-						if (child.slot === 'children') {
-							child.parentElement.removeChild(child);
-						}
+					for (const el of this.shadowRoot.elSlotChildren.assignedNodes()) {
+						el.parentElement.removeChild(el);
 					}
 				}
 				
-				const allDescriptors = this.constructor._getDescriptors(
-					this.value
-					, prevLevelLimit === 0
-					, levelLimit + 1
-				);
+				const value = this.value;
+				const includeExtra = prevLevelLimit === 0;
+				const allDescriptors = this.constructor._getDescriptors(value, includeExtra);
 				let hasMore = false;
-				const renderedNames = new Set();
-				// const documentFragment = document.createDocumentFragment();
+				let rendered = false;
+				const allRenderedNames = new Set();
+				
 				for (const descriptor of allDescriptors) {
 					if (descriptor.level >= levelLimit) {
-						hasMore = true;
-						break;
+						if (!rendered) {
+							levelLimit++;
+						}
+						else {
+							hasMore = true;
+							break;
+						}
 					}
 					if (descriptor.hasOwnProperty('name')) {
-						if (renderedNames.has(descriptor.name)) {
+						if (allRenderedNames.has(descriptor.name)) {
 							continue;
 						}
-						renderedNames.add(descriptor.name);
+						allRenderedNames.add(descriptor.name);
 					}
 					if (descriptor.level < prevLevelLimit) {
 						// skip already rendered descriptors
 						continue;
 					}
-					const elProperty = this.constructor.fromDescriptor(descriptor, this.value);
+					const elProperty = this.constructor.fromDescriptor(descriptor, value);
 					elProperty.slot = 'children';
-					// elProperty._descriptor = descriptor; // debug
 					this.appendChild(elProperty);
+					rendered = true;
 				}
 				
 				this.shadowRoot.elWrapper.toggleAttribute('iv-i-has-more', hasMore);
 				this[KEY_CHILDREN_RENDERED_LEVEL] = levelLimit;
 				return true;
+			}
+			
+			expand(depth = 0) {
+				depth = (depth | 0) || 0;
+				if (depth > 0xfff) {
+					throw new Error(`Value for 'depth' is too large`);
+				}
+				if (depth < 0) {
+					this.expanded = false;
+					return 0;
+				}
+				this.expanded = true;
+				
+				this.renderChildren(this._suggestExpandLevel());
+				let res = 1;
+				if (depth > 0) {
+					const childrenIvEls = this.querySelectorAll(':scope > inspect-value[slot="children"]');
+					for (const child of childrenIvEls) {
+						if (!child.expandable) {
+							continue;
+						}
+						res += child.expand(depth - 1);
+					}
+				}
+				return res;
 			}
 			
 			evaluateGetter() {
@@ -771,24 +769,16 @@ common: {
 				}
 			}
 			
-			getPropertyNameNodes() {
-				const res = [];
-				for (const node of this.childNodes) {
-					if (node.slot === 'property') {
-						res.push(node);
-					}
+			_suggestExpandLevel() {
+				let level = 1;
+				if (level < this[KEY_CHILDREN_RENDERED_LEVEL]) {
+					level = this[KEY_CHILDREN_RENDERED_LEVEL];
 				}
-				return res;
-			}
-			
-			getValueNodes() {
-				const res = [];
-				for (const node of this.childNodes) {
-					if (!node.slot) {
-						res.push(node);
-					}
+				const value = this.value;
+				if (value != null && value.constructor !== Object && value.constructor !== Array) {
+					level = Math.max(level, 2);
 				}
-				return res;
+				return level;
 			}
 			
 			/////////////////////////////////////////////
@@ -817,8 +807,8 @@ common: {
 				}
 				this.renderChildren(
 					this[KEY_CHILDREN_RENDERED_LEVEL]
-						? Infinity
-						: (this[KEY_CHILDREN_RENDERED_LEVEL] || 9) + 1
+						? this[KEY_CHILDREN_RENDERED_LEVEL] + 1
+						: Infinity
 				);
 			}
 			
@@ -851,14 +841,10 @@ common: {
 				}
 				else if (ivType === 'object') {
 					if (value instanceof Array) {
-						return [
-							`${value.constructor.name}(${value.length})`,
-						];
+						return [`${value.constructor.name}(${value.length})`];
 					}
 					else if (value instanceof Set || value instanceof Map) {
-						return [
-							`${value.constructor.name}(${value.size})`,
-						];
+						return [`${value.constructor.name}(${value.size})`];
 					}
 					else {
 						return [(value.constructor || Object).name];
@@ -913,17 +899,14 @@ common: {
 					}
 					else if (value instanceof HTMLElement) {
 						try {
-							return [
-								`<${value.tagName.toLowerCase()}>`,
-							];
+							return [`<${value.tagName.toLowerCase()}>`];
 						}
 						catch (err) {
 							return [];
 						}
 					}
 					else if (value instanceof Promise) {
-						const done = new ValueWrapper();
-						done.set(new InfoText("Pending\u2026"));
+						const done = new ValueWrapper(new InfoText("Pending\u2026"));
 						value
 							.then(() => done.set(new InfoText("Resolved")))
 							.catch(() => done.set(new InfoText("Error")))
