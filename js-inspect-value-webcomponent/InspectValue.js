@@ -383,13 +383,16 @@ common: {
 			
 			connectedCallback() {
 				this.shadowRoot.$$onClick = this.$$onClick.bind(this);
+				this.shadowRoot.$$onMouseDown = this.$$onMouseDown.bind(this);
 				this.shadowRoot.$$onClickShowMore = this.$$onClickShowMore.bind(this);
 				
 				this.shadowRoot.elContainer.addEventListener('click', this.shadowRoot.$$onClick);
+				this.shadowRoot.elContainer.addEventListener('mousedown', this.shadowRoot.$$onMouseDown);
 				this.shadowRoot.elBtnShowMore.addEventListener('click', this.shadowRoot.$$onClickShowMore);
 			}
 			disconnectedCallback() {
 				this.shadowRoot.elContainer.removeEventListener('click', this.shadowRoot.$$onClick);
+				this.shadowRoot.elContainer.removeEventListener('mousedown', this.shadowRoot.$$onMouseDown);
 				this.shadowRoot.elBtnShowMore.removeEventListener('click', this.shadowRoot.$$onClickShowMore);
 			}
 			
@@ -674,15 +677,15 @@ common: {
 				this.appendChild(elPropertyName);
 			}
 			
-			renderChildren(levelLimit) {
+			renderChildren(levelLimit, force) {
 				if (!levelLimit || levelLimit < 0) {
 					levelLimit = Infinity;
 				}
 				let prevLevelLimit = this[KEY_CHILDREN_RENDERED_LEVEL] || 0;
-				if (levelLimit === prevLevelLimit) {
+				if (levelLimit === prevLevelLimit && !force) {
 					return false;
 				}
-				if (levelLimit < prevLevelLimit) {
+				if (levelLimit <= prevLevelLimit) {
 					prevLevelLimit = 0; // reset
 					for (const el of this.shadowRoot.elSlotChildren.assignedNodes()) {
 						el.parentElement.removeChild(el);
@@ -796,6 +799,27 @@ common: {
 					return;
 				}
 				this.expanded = !this.expanded;
+			}
+			
+			$$onMouseDown(event) {
+				if (this.disabled) {
+					return;
+				}
+				if (this.simple) {
+					return;
+				}
+				if (!this.expandable) {
+					return;
+				}
+				if (event.button === 1) {
+					if (this.expanded) {
+						this.renderChildren(this[KEY_CHILDREN_RENDERED_LEVEL], true); // re-render
+					}
+					
+					if (!this.simple) {
+						this.renderBrief();
+					}
+				}
 			}
 			
 			$$onClickShowMore(event) {

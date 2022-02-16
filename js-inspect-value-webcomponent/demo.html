@@ -164,7 +164,8 @@ const proxy = new Proxy({}, {
     },
 });
 proxy.a = 'a';
-add(InspectValue.create(proxy));
+add(InspectValue.create(proxy), document.createTextNode('<-- middle click it to update view'));
+proxy.b = 'b';
 
 </script>
 </body>
