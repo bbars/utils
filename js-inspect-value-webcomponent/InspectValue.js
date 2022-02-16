@@ -93,7 +93,7 @@ common: {
 				flex: 0 0 auto;
 				max-width: 100%;
 			}
-			:host #elValueLine #elBrief {
+			:host #elValueLine #elSlotBrief {
 				flex: 0 1 auto;
 				overflow: hidden;
 				white-space: nowrap;
@@ -187,15 +187,9 @@ common: {
 				font-style: italic;
 				color: var(--color-class);
 			}
-			:host #elWrapper[iv-i-type="class"] #elContents > slot:before {
-				content: 'class\\00a0';
-			}
 			:host #elWrapper[iv-i-type="function"] #elContents > slot {
 				font-style: italic;
 				color: var(--color-function);
-			}
-			:host #elWrapper[iv-i-type="function"] #elContents > slot:before {
-				content: '\\0192\\00a0';
 			}
 			:host #elWrapper[iv-i-type="object"] #elContents > slot {
 				color: var(--color-object);
@@ -226,6 +220,14 @@ common: {
 			:host #elChildren {
 				display: none;
 			}
+			:host #elSlotBrief {
+				display: inline;
+				font-style: italic;
+				opacity: var(--greyed-opacity);
+			}
+			:host #elWrapper[iv-i-slot-empty-brief] #elSlotBrief {
+				display: none;
+			}
 			
 			:host #elChildren {
 				padding-left: var(--indent);
@@ -234,11 +236,6 @@ common: {
 				/*padding-left: var(--indent);*/
 				/*text-indent: calc(-1 * var(--indent));*/
 			}
-			:host #elBrief {
-				display: inline;
-				font-style: italic;
-				opacity: var(--greyed-opacity);
-			}
 			:host-context(inspect-value) #elChildren {
 				/*padding-left: 0;*/ /* already spaced by #elWrapper */
 			}
@@ -246,7 +243,7 @@ common: {
 				display: flex;
 				flex-direction: column;
 			}
-			:host([expanded]) #elBrief {
+			:host([expanded]) #elSlotBrief {
 				display: none;
 			}
 			
@@ -273,11 +270,11 @@ common: {
 			
 			/* Property: */
 			
-			:host(:not([named])) #elPropertyContainer {
+			:host #elWrapper[iv-i-slot-empty-property] #elPropertyContainer {
 				display: none;
 			}
 			
-			:host([basic]) slot[name="property"] {
+			:host([basic]) slot#elSlotProperty {
 				color: var(--color-basic-property);
 			}
 			:host([hidden]) #elPropertyContainer {
@@ -322,21 +319,21 @@ common: {
 			/*:host slot::slotted(inspect-value) {
 				display: inline !important;
 			}*/
-			:host slot[name="property"]::slotted(inspect-value) {
+			:host slot#elSlotProperty::slotted(inspect-value) {
 				display: inline !important;
 			}
 			
 			</style>
-			<span id="elWrapper">
+			<span id="elWrapper" iv-i-slot-empty-property iv-i-slot-empty-brief>
 				<span id="elValueLine">
 					<span id="elMain">
-						<span id="elPropertyContainer"><span id="elInherited"></span><span id="elPropertyContents"><slot name="property"></slot></span>: </span>
+						<span id="elPropertyContainer"><span id="elInherited"></span><span id="elPropertyContents"><slot name="property" id="elSlotProperty"></slot></span>: </span>
 						<span id="elBtnGetter"></span>
 						<span id="elContainer">
 							<span id="elBtnToggleChildren"></span><span id="elContents"><slot></slot></span>
 						</span>
 					</span>
-					<slot name="brief" id="elBrief"></slot>
+					<slot name="brief" id="elSlotBrief"></slot>
 				</span>
 				<slot name="children" id="elChildren"></slot>
 				<span id="elBtnShowMore"></span>
@@ -348,11 +345,11 @@ common: {
 			[KEY_IGNORE_ATTRIBUTE_CHANGES] = 0;
 			
 			static get observedAttributes() {
-				return ['disabled', 'expanded', 'named', 'enclosed', 'basic', 'inherited', 'virtual', 'hidden'];
+				return ['disabled', 'expanded', 'enclosed', 'basic', 'inherited', 'virtual', 'hidden'];
 			}
 			
 			static get observedBoolAttributes() {
-				return ['disabled', 'expanded', 'named', 'enclosed', 'basic', 'inherited', 'virtual', 'hidden'];
+				return ['disabled', 'expanded', 'enclosed', 'basic', 'inherited', 'virtual', 'hidden'];
 			}
 			
 			constructor() {
@@ -362,6 +359,8 @@ common: {
 				this.shadowRoot.elWrapper = this.shadowRoot.getElementById('elWrapper');
 				this.shadowRoot.elContainer = this.shadowRoot.getElementById('elContainer');
 				this.shadowRoot.elBtnShowMore = this.shadowRoot.getElementById('elBtnShowMore');
+				this.shadowRoot.elSlotProperty = this.shadowRoot.getElementById('elSlotProperty');
+				this.shadowRoot.elSlotBrief = this.shadowRoot.getElementById('elSlotBrief');
 				this.shadowRoot.elBtnGetter = this.shadowRoot.getElementById('elBtnGetter');
 				this.shadowRoot.elBtnGetter.addEventListener('click', (event) => {
 					if (this.disabled) {
@@ -370,6 +369,9 @@ common: {
 					this.evaluateGetter();
 				});
 				this.$$onValueWrapperChange = this.$$onValueWrapperChange.bind(this);
+				this.$$onSlotChange = this.$$onSlotChange.bind(this);
+				this.shadowRoot.elSlotProperty.addEventListener('slotchange', this.$$onSlotChange);
+				this.shadowRoot.elSlotBrief.addEventListener('slotchange', this.$$onSlotChange);
 			}
 			
 			static create(value, propertyName) {
@@ -377,9 +379,6 @@ common: {
 				res.value = value;
 				if (arguments.length > 1) {
 					res.propertyName = propertyName;
-				}
-				else {
-					res.named = false;
 				}
 				return res;
 			}
@@ -423,19 +422,6 @@ common: {
 			set propertyName(propertyName) {
 				this[KEY_PROPERTY_NAME] = propertyName;
 				this.renderPropertyName();
-			}
-			
-			get named() {
-				return this.hasAttribute('named', false);
-			}
-			set named(named) {
-				named = !!named;
-				this[KEY_IGNORE_ATTRIBUTE_CHANGES]++;
-				this.toggleAttribute('named', named);
-				if (named) {
-					this.propertyName = this.propertyName;
-				}
-				this[KEY_IGNORE_ATTRIBUTE_CHANGES]--;
 			}
 			
 			get enclosed() {
@@ -660,10 +646,6 @@ common: {
 					}
 				}
 				const propertyNameIvType = InspectValue.getIvType(propertyName);
-				if (!this.named) {
-					this.named = true;
-					return; // render would restart within setter 'named'
-				}
 				
 				let elPropertyName;
 				if (propertyNameIvType === 'string') {
@@ -804,6 +786,13 @@ common: {
 				);
 			}
 			
+			$$onSlotChange(event) {
+				const slot = event.target;
+				const attrName = 'iv-i-slot-empty' + (!slot.name ? '' : '-' + slot.name)
+				const isEmpty = event.target.assignedNodes().length === 0;
+				this.shadowRoot.elWrapper.toggleAttribute(attrName, isEmpty);
+			}
+			
 			$$onValueWrapperChange(value, valueWrapper) {
 				this.renderValue();
 			}
@@ -846,10 +835,10 @@ common: {
 					return [String(value) + 'n'];
 				}
 				else if (ivType === 'function') {
-					return [value.name];
+					return [`\u0192 ${value.name}`.trim()];
 				}
 				else if (ivType === 'class') {
-					return [value.name];
+					return [`class ${value.name}`.trim()];
 				}
 				return [String(value)];
 			}
