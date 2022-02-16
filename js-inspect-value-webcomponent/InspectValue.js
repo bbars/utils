@@ -874,14 +874,16 @@ common: {
 				}
 				else if (ivType === 'object') {
 					if (value instanceof Array) {
-						return [];
+						return this._generateValueBriefViewArray(value);
 					}
 					else if (value instanceof Set || value instanceof Map) {
 						return [];
 					}
 					else if (value instanceof Date) {
 						return [
-							isNaN(value) ? 'Invalid Date' : value.toISOString(),
+							isNaN(value)
+								? "Invalid Date"
+								: value.toISOString().replace(/^([\d-]+)T([\d:.]+)(.*)$/, '$1 $2 $3')
 						];
 					}
 					else if (value instanceof HTMLElement) {
@@ -896,10 +898,10 @@ common: {
 					}
 					else if (value instanceof Promise) {
 						const done = new ValueWrapper();
-						done.set(new InfoText('Pending\u2026'));
+						done.set(new InfoText("Pending\u2026"));
 						value
-							.then(() => done.set(new InfoText('Resolved')))
-							.catch(() => done.set(new InfoText('Error')))
+							.then(() => done.set(new InfoText("Resolved")))
+							.catch(() => done.set(new InfoText("Error")))
 						;
 						return [this.create(done)];
 					}
@@ -908,7 +910,7 @@ common: {
 					}
 				}
 				else if (ivType === 'function') {
-					return this._generateValueBriefViewFunction(value)[0];
+					return this._generateValueBriefViewFunction(value);
 				}
 				return undefined;
 			}
@@ -918,6 +920,44 @@ common: {
 				const m = /^[^\(]*\((.*)\)\s*(?:\{|=>)/.exec(value);
 				res += '(' + (!m ? '' : m[1]).trim() + ')';
 				return [res];
+			}
+			
+			static _generateValueBriefViewArray(value) {
+				let res = document.createElement('div');
+				let prevI = -1;
+				let emptyCounter = 0;
+				for (const i in value) {
+					if (res.childNodes.length > 0) {
+						res.appendChild(document.createTextNode(", "));
+					}
+					if (res.textContent.length > 150) {
+						res.appendChild(document.createTextNode("\u2026"));
+						break;
+					}
+					if (Number.isInteger(+i)) {
+						if (i - prevI > 1) {
+							emptyCounter += i - prevI - 1;
+						}
+						prevI = i;
+					}
+					if (emptyCounter) {
+						res.appendChild(document.createTextNode(`${emptyCounter} empty, `));
+						emptyCounter = 0;
+					}
+					let elIv;
+					if (Number.isInteger(+i)) {
+						elIv = this.create(value[i]);
+					}
+					else {
+						elIv = this.create(value[i], i);
+					}
+					elIv.nobrief = true;
+					elIv.disabled = true;
+					res.appendChild(elIv);
+				}
+				res.insertBefore(document.createTextNode("["), res.childNodes[0]);
+				res.appendChild(document.createTextNode("]"));
+				return Array.from(res.childNodes);
 			}
 			
 			static *_getDescriptors(obj0, includeExtra) {
