@@ -122,17 +122,17 @@ common: {
 			:host([expanded]) #elBtnToggleChildren:before {
 				transform: translate(-10%, -25%) rotate(+45deg);
 			}
-			:host #elWrapper[iv-i-expandable] #elBtnToggleChildren:before {
+			:host(:not([simple])) #elWrapper[iv-i-expandable] #elBtnToggleChildren:before {
 				display: inline-block;
 			}
-			:host #elWrapper[iv-i-expandable] #elContainer {
+			:host(:not([simple])) #elWrapper[iv-i-expandable] #elContainer {
 				cursor: pointer;
 			}
 			:host([disabled]) #elWrapper[iv-i-expandable] #elContainer {
 				cursor: not-allowed;
 			}
 			@media(hover: hover) and (pointer: fine) {
-				:host(:not([disabled])) #elWrapper[iv-i-expandable] #elContainer:hover #elContents {
+				:host(:not([disabled]):not([simple])) #elWrapper[iv-i-expandable] #elContainer:hover #elContents {
 					text-decoration: underline;
 				}
 			}
@@ -227,7 +227,7 @@ common: {
 				opacity: var(--greyed-opacity);
 			}
 			:host #elWrapper[iv-i-slot-empty-brief] #elSlotBrief,
-			:host([nobrief]) #elWrapper #elSlotBrief {
+			:host([simple]) #elWrapper #elSlotBrief {
 				display: none;
 			}
 			
@@ -344,11 +344,11 @@ common: {
 			[KEY_IGNORE_ATTRIBUTE_CHANGES] = 0;
 			
 			static get observedAttributes() {
-				return ['disabled', 'expanded', 'enclosed', 'basic', 'inherited', 'virtual', 'hidden', 'nobrief'];
+				return ['disabled', 'expanded', 'enclosed', 'basic', 'inherited', 'virtual', 'hidden', 'simple'];
 			}
 			
 			static get observedBoolAttributes() {
-				return ['disabled', 'expanded', 'enclosed', 'basic', 'inherited', 'virtual', 'hidden', 'nobrief'];
+				return ['disabled', 'expanded', 'enclosed', 'basic', 'inherited', 'virtual', 'hidden', 'simple'];
 			}
 			
 			constructor() {
@@ -375,6 +375,16 @@ common: {
 			
 			static create(value, propertyName) {
 				const res = new this();
+				res.value = value;
+				if (arguments.length > 1) {
+					res.propertyName = propertyName;
+				}
+				return res;
+			}
+			
+			static createSimple(value, propertyName) {
+				const res = new this();
+				res.simple = true;
 				res.value = value;
 				if (arguments.length > 1) {
 					res.propertyName = propertyName;
@@ -473,14 +483,17 @@ common: {
 				this[KEY_IGNORE_ATTRIBUTE_CHANGES]--;
 			}
 			
-			get nobrief() {
-				return this.hasAttribute('nobrief', false);
+			get simple() {
+				return this.hasAttribute('simple', false);
 			}
-			set nobrief(nobrief) {
-				nobrief = !!nobrief;
+			set simple(simple) {
+				simple = !!simple;
 				this[KEY_IGNORE_ATTRIBUTE_CHANGES]++;
-				this.toggleAttribute('nobrief', nobrief);
+				this.toggleAttribute('simple', simple);
 				this[KEY_IGNORE_ATTRIBUTE_CHANGES]--;
+				if (!simple) {
+					this.renderBrief();
+				}
 			}
 			
 			get expandable() {
@@ -616,7 +629,9 @@ common: {
 					this.appendChild(node);
 				}
 				
-				this.renderBrief();
+				if (!this.simple) {
+					this.renderBrief();
+				}
 			}
 			
 			renderBrief() {
@@ -662,7 +677,7 @@ common: {
 					
 					if (propertyName.trim() === '') {
 						elPropertyName = InspectValue.create(propertyName);
-						elPropertyName.nobrief = true;
+						elPropertyName.simple = true;
 						this.basic = false;
 					}
 					else {
@@ -673,7 +688,7 @@ common: {
 				}
 				else {
 					elPropertyName = InspectValue.create(propertyName);
-					elPropertyName.nobrief = true;
+					elPropertyName.simple = true;
 					this.enclosed = true;
 					this.basic = false;
 				}
@@ -739,6 +754,7 @@ common: {
 					throw new Error(`Current value is not a getter`);
 				}
 				try {
+					this._setBrief([]);
 					this.value = getter();
 					return this.value;
 				}
@@ -775,6 +791,9 @@ common: {
 			
 			$$onClick(event) {
 				if (this.disabled) {
+					return;
+				}
+				if (this.simple) {
 					return;
 				}
 				if (!this.expandable) {
@@ -906,7 +925,7 @@ common: {
 						return [this.create(done)];
 					}
 					else {
-						return [];
+						return this._generateValueBriefViewObject(value);
 					}
 				}
 				else if (ivType === 'function') {
@@ -946,17 +965,33 @@ common: {
 					}
 					let elIv;
 					if (Number.isInteger(+i)) {
-						elIv = this.create(value[i]);
+						elIv = this.createSimple(value[i]);
 					}
 					else {
-						elIv = this.create(value[i], i);
+						elIv = this.createSimple(value[i], i);
 					}
-					elIv.nobrief = true;
-					elIv.disabled = true;
 					res.appendChild(elIv);
 				}
 				res.insertBefore(document.createTextNode("["), res.childNodes[0]);
 				res.appendChild(document.createTextNode("]"));
+				return Array.from(res.childNodes);
+			}
+			
+			static _generateValueBriefViewObject(value) {
+				let res = document.createElement('div');
+				for (const k in value) {
+					if (res.childNodes.length > 0) {
+						res.appendChild(document.createTextNode(", "));
+					}
+					if (res.textContent.length > 150) {
+						res.appendChild(document.createTextNode("\u2026"));
+						break;
+					}
+					const elIv = this.createSimple(value[k], k);
+					res.appendChild(elIv);
+				}
+				res.insertBefore(document.createTextNode("{"), res.childNodes[0]);
+				res.appendChild(document.createTextNode("}"));
 				return Array.from(res.childNodes);
 			}
 			
