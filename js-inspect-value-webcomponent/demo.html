@@ -47,6 +47,7 @@ var m = new Map();
 m.set({}, 'obj1');
 m.set([], 'arr');
 m.set({}, 'obj2');
+m.set(new Date(), 'date');
 addValues(m);
 addValues(document.body);
 const iv = InspectValue.create(undefined, 'inspect self');

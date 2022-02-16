@@ -87,7 +87,7 @@ common: {
 				display: inline-flex;
 				max-width: 100%;
 				flex-wrap: nowrap;
-				gap: 1em;
+				gap: 0.5em;
 			}
 			:host #elValueLine #elMain {
 				flex: 0 0 auto;
@@ -115,6 +115,7 @@ common: {
 				transform-origin: 65% 65%;
 				transition: transform 100ms ease;
 				transform: translate(0%, -25%) rotate(-45deg);
+				opacity: var(--greyed-opacity);
 				
 				display: none;
 			}
@@ -225,7 +226,8 @@ common: {
 				font-style: italic;
 				opacity: var(--greyed-opacity);
 			}
-			:host #elWrapper[iv-i-slot-empty-brief] #elSlotBrief {
+			:host #elWrapper[iv-i-slot-empty-brief] #elSlotBrief,
+			:host([nobrief]) #elWrapper #elSlotBrief {
 				display: none;
 			}
 			
@@ -316,9 +318,6 @@ common: {
 				vertical-align: text-top;
 			}
 			
-			/*:host slot::slotted(inspect-value) {
-				display: inline !important;
-			}*/
 			:host slot#elSlotProperty::slotted(inspect-value) {
 				display: inline !important;
 			}
@@ -345,11 +344,11 @@ common: {
 			[KEY_IGNORE_ATTRIBUTE_CHANGES] = 0;
 			
 			static get observedAttributes() {
-				return ['disabled', 'expanded', 'enclosed', 'basic', 'inherited', 'virtual', 'hidden'];
+				return ['disabled', 'expanded', 'enclosed', 'basic', 'inherited', 'virtual', 'hidden', 'nobrief'];
 			}
 			
 			static get observedBoolAttributes() {
-				return ['disabled', 'expanded', 'enclosed', 'basic', 'inherited', 'virtual', 'hidden'];
+				return ['disabled', 'expanded', 'enclosed', 'basic', 'inherited', 'virtual', 'hidden', 'nobrief'];
 			}
 			
 			constructor() {
@@ -471,6 +470,16 @@ common: {
 				hidden = !!hidden;
 				this[KEY_IGNORE_ATTRIBUTE_CHANGES]++;
 				this.toggleAttribute('hidden', hidden);
+				this[KEY_IGNORE_ATTRIBUTE_CHANGES]--;
+			}
+			
+			get nobrief() {
+				return this.hasAttribute('nobrief', false);
+			}
+			set nobrief(nobrief) {
+				nobrief = !!nobrief;
+				this[KEY_IGNORE_ATTRIBUTE_CHANGES]++;
+				this.toggleAttribute('nobrief', nobrief);
 				this[KEY_IGNORE_ATTRIBUTE_CHANGES]--;
 			}
 			
@@ -653,6 +662,7 @@ common: {
 					
 					if (propertyName.trim() === '') {
 						elPropertyName = InspectValue.create(propertyName);
+						elPropertyName.nobrief = true;
 						this.basic = false;
 					}
 					else {
@@ -663,6 +673,7 @@ common: {
 				}
 				else {
 					elPropertyName = InspectValue.create(propertyName);
+					elPropertyName.nobrief = true;
 					this.enclosed = true;
 					this.basic = false;
 				}
