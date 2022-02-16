@@ -621,6 +621,15 @@ common: {
 				}
 			}
 			
+			renderSecondary() {
+				if (this.expandable && this[KEY_CHILDREN_RENDERED_LEVEL]) {
+					this.renderChildren(this[KEY_CHILDREN_RENDERED_LEVEL], true); // re-render
+				}
+				if (!this.simple) {
+					this.renderBrief();
+				}
+			}
+			
 			renderBrief() {
 				const value = this.value;
 				const ivType = this.constructor.getIvType(value);
@@ -812,13 +821,7 @@ common: {
 					return;
 				}
 				if (event.button === 1) {
-					if (this.expanded) {
-						this.renderChildren(this[KEY_CHILDREN_RENDERED_LEVEL], true); // re-render
-					}
-					
-					if (!this.simple) {
-						this.renderBrief();
-					}
+					this.renderSecondary();
 				}
 			}
 			
@@ -922,12 +925,7 @@ common: {
 						];
 					}
 					else if (value instanceof HTMLElement) {
-						try {
-							return [`<${value.tagName.toLowerCase()}>`];
-						}
-						catch (err) {
-							return [];
-						}
+						return this._generateValueBriefViewHTMLElement(value);
 					}
 					else if (value instanceof Promise) {
 						const done = new ValueWrapper(new InfoText("Pending\u2026"));
@@ -1006,6 +1004,17 @@ common: {
 				res.insertBefore(document.createTextNode("{"), res.childNodes[0]);
 				res.appendChild(document.createTextNode("}"));
 				return Array.from(res.childNodes);
+			}
+			
+			static _generateValueBriefViewHTMLElement(value) {
+				try {
+					let res = value.cloneNode().outerHTML;
+					res = res.replace(/<\/[^>]+>$/, '');
+					return [res];
+				}
+				catch (err) {
+					return [];
+				}
 			}
 			
 			static *_getDescriptors(obj0, includeExtra) {
