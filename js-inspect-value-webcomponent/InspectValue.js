@@ -131,6 +131,9 @@ common: {
 			:host([disabled]) #elWrapper[iv-i-expandable] #elContainer {
 				cursor: not-allowed;
 			}
+			:host(:not([disabled]):not([simple])) #elWrapper[iv-i-expandable] #elContainer:active #elContents {
+				text-decoration: underline;
+			}
 			@media(hover: hover) and (pointer: fine) {
 				:host(:not([disabled]):not([simple])) #elWrapper[iv-i-expandable] #elContainer:hover #elContents {
 					text-decoration: underline;
@@ -148,6 +151,9 @@ common: {
 			}
 			:host #elWrapper[iv-i-type="getter"] #elBtnGetter:before {
 				content: var(--content-getter);
+			}
+			:host(:not([disabled])) #elWrapper #elBtnGetter:active {
+				text-decoration: underline;
 			}
 			@media(hover: hover) and (pointer: fine) {
 				:host(:not([disabled])) #elWrapper #elBtnGetter:hover {
