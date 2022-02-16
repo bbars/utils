@@ -35,6 +35,8 @@ function addValues(...values) {
     return add(...values.map((value) => InspectValue.create(value)));
 }
 
+const timeStart = new Date();
+add(InspectValue.create(timeStart, 'timeStart'));
 add(InspectValue.create(), InspectValue.create(null));
 add(InspectValue.create(true), InspectValue.create(false));
 addValues(0, 1234, NaN, 1/0);
@@ -150,6 +152,8 @@ valueWrapper._tmr = setInterval(() => { valueWrapper.set(valueWrapper.get() + 1)
     }
 })();
 
+const timeEnd = new Date();
+add(InspectValue.create(timeEnd, 'timeEnd'), InspectValue.create(timeEnd - timeStart, 'renderDuration'));
 
 </script>
 </body>
