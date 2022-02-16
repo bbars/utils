@@ -233,7 +233,8 @@ common: {
 				opacity: var(--greyed-opacity);
 			}
 			:host #elWrapper[iv-i-slot-empty-brief] #elSlotBrief,
-			:host([simple]) #elWrapper #elSlotBrief {
+			:host([simple]) #elWrapper #elSlotBrief,
+			:host([nobrief]) #elWrapper #elSlotBrief {
 				display: none;
 			}
 			
@@ -480,6 +481,13 @@ common: {
 			set propertyName(propertyName) {
 				this[KEY_PROPERTY_NAME] = propertyName;
 				this.renderPropertyName();
+			}
+			
+			get nobrief() {
+				return this.hasAttribute('nobrief');
+			}
+			set nobrief(nobrief) {
+				this._toggleAttributeQuiet('nobrief', !!nobrief);
 			}
 			
 			get disabled() {
