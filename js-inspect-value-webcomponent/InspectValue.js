@@ -675,7 +675,7 @@ common: {
 					
 					if (propertyName.trim() === '') {
 						elPropertyName = InspectValue.create(propertyName);
-						elPropertyName.simple = true;
+						elPropertyName.nobrief = true;
 						this.basic = false;
 					}
 					else {
@@ -686,7 +686,7 @@ common: {
 				}
 				else {
 					elPropertyName = InspectValue.create(propertyName);
-					elPropertyName.simple = true;
+					elPropertyName.nobrief = true;
 					this.enclosed = true;
 					this.basic = false;
 				}
