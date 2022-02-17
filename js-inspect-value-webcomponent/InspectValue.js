@@ -98,6 +98,7 @@ common: {
 				overflow: hidden;
 				white-space: nowrap;
 				text-overflow: ellipsis;
+				max-height: 1.2em;
 			}
 			
 			:host #elBtnToggleChildren:before {
@@ -211,7 +212,7 @@ common: {
 				font-style: italic;
 			}
 			
-			:host slot:not([name])::slotted(.collapsed-string-slice) {
+			:host #elSlot::slotted(.collapsed-string-slice) {
 				display: inline-block;
 				width: 1em;
 				height: 1em;
@@ -231,6 +232,7 @@ common: {
 				display: inline;
 				font-style: italic;
 				opacity: var(--greyed-opacity);
+				white-space: nowrap;
 			}
 			:host #elWrapper[iv-i-slot-empty-brief] #elSlotBrief,
 			:host([simple]) #elWrapper #elSlotBrief,
@@ -924,6 +926,9 @@ common: {
 					}
 					else if (value instanceof Set || value instanceof Map) {
 						return [];
+					}
+					else if (value instanceof Boolean || value instanceof Number || value instanceof BigInt || value instanceof String) {
+						return ['{', this.createSimple(value.valueOf()), '}'];
 					}
 					else if (value instanceof Date) {
 						return [

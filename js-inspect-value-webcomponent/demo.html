@@ -42,6 +42,8 @@ add(InspectValue.create(true), InspectValue.create(false));
 addValues(0, 1234, NaN, 1/0);
 addValues(13461347123582458n);
 addValues("Ololo");
+addValues(new Boolean(1), new Number(1234), Object(BigInt(1234)));
+addValues(new String("Ololo"), new String(new Array(100).fill('long string').join(' ')));
 addValues([0, 1, "Mememe", 1234n]);
 addValues(new Array(100).fill('long string').join(' '));
 addValues(new Set([1,2,3,4]));
