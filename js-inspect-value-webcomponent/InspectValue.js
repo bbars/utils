@@ -124,20 +124,20 @@ common: {
 			:host([expanded]) #elBtnToggleChildren:before {
 				transform: translate(-10%, -25%) rotate(+45deg);
 			}
-			:host(:not([simple])) #elWrapper[iv-i-expandable] #elBtnToggleChildren:before {
+			:host(:not([noexpand])) #elWrapper[iv-i-expandable] #elBtnToggleChildren:before {
 				display: inline-block;
 			}
-			:host(:not([simple])) #elWrapper[iv-i-expandable] #elContainer {
+			:host(:not([noexpand])) #elWrapper[iv-i-expandable] #elContainer {
 				cursor: pointer;
 			}
 			:host([disabled]) #elWrapper[iv-i-expandable] #elContainer {
 				cursor: not-allowed;
 			}
-			:host(:not([disabled]):not([simple])) #elWrapper[iv-i-expandable] #elContainer:active #elContents {
+			:host(:not([disabled]):not([noexpand])) #elWrapper[iv-i-expandable] #elContainer:active #elContents {
 				text-decoration: underline;
 			}
 			@media(hover: hover) and (pointer: fine) {
-				:host(:not([disabled]):not([simple])) #elWrapper[iv-i-expandable] #elContainer:hover #elContents {
+				:host(:not([disabled]):not([noexpand])) #elWrapper[iv-i-expandable] #elContainer:hover #elContents {
 					text-decoration: underline;
 				}
 			}
@@ -236,7 +236,6 @@ common: {
 				white-space: nowrap;
 			}
 			:host #elWrapper[iv-i-slot-empty-brief] #elSlotBrief,
-			:host([simple]) #elWrapper #elSlotBrief,
 			:host([nobrief]) #elWrapper #elSlotBrief {
 				display: none;
 			}
@@ -354,11 +353,11 @@ common: {
 			[KEY_IGNORE_ATTRIBUTE_CHANGES] = 0;
 			
 			static get observedAttributes() {
-				return ['disabled', 'expanded', 'enclosed', 'basic', 'inherited', 'virtual', 'hidden', 'simple'];
+				return ['disabled', 'expanded', 'enclosed', 'basic', 'inherited', 'virtual', 'hidden', 'noexpand', 'nobrief'];
 			}
 			
 			static get observedBoolAttributes() {
-				return ['disabled', 'expanded', 'enclosed', 'basic', 'inherited', 'virtual', 'hidden', 'simple'];
+				return ['disabled', 'expanded', 'enclosed', 'basic', 'inherited', 'virtual', 'hidden', 'noexpand', 'nobrief'];
 			}
 			
 			constructor() {
@@ -431,7 +430,8 @@ common: {
 			
 			static createSimple(value, propertyName) {
 				const res = new this();
-				res.simple = true;
+				res.noexpand = true;
+				res.nobrief = true;
 				res.value = value;
 				if (arguments.length > 1) {
 					res.propertyName = propertyName;
@@ -536,15 +536,11 @@ common: {
 				this._toggleAttributeQuiet('hidden', !!hidden);
 			}
 			
-			get simple() {
-				return this.hasAttribute('simple', false);
+			get noexpand() {
+				return this.hasAttribute('noexpand', false);
 			}
-			set simple(simple) {
-				simple = !!simple;
-				this._toggleAttributeQuiet('simple', simple);
-				if (!simple) {
-					this.renderBrief();
-				}
+			set noexpand(noexpand) {
+				this._toggleAttributeQuiet('noexpand', !!noexpand);
 			}
 			
 			get expandable() {
@@ -627,7 +623,7 @@ common: {
 					this.expand(); // re-render
 				}
 				
-				if (!this.simple) {
+				if (!this.nobrief) {
 					this.renderBrief();
 				}
 			}
@@ -636,7 +632,7 @@ common: {
 				if (this.expandable) {
 					this.renderChildren(false, true); // re-render
 				}
-				if (!this.simple) {
+				if (!this.nobrief) {
 					this.renderBrief();
 				}
 			}
@@ -788,7 +784,9 @@ common: {
 				}
 				catch (err) {
 					// this.value = err;
-					this._setBrief([this.constructor.create(err)]);
+					const el = this.constructor.create(err);
+					el.noexpand = true;
+					this._setBrief([el]);
 					// throw err;
 				}
 			}
@@ -818,7 +816,7 @@ common: {
 				if (this.disabled) {
 					return;
 				}
-				if (this.simple) {
+				if (this.noexpand) {
 					return;
 				}
 				if (!this.expandable) {
@@ -831,13 +829,8 @@ common: {
 				if (this.disabled) {
 					return;
 				}
-				if (this.simple) {
-					return;
-				}
-				if (!this.expandable) {
-					return;
-				}
 				if (event.button === 1) {
+					event.preventDefault();
 					this.renderSecondary();
 				}
 			}
