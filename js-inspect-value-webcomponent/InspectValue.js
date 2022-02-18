@@ -633,8 +633,8 @@ common: {
 			}
 			
 			renderSecondary() {
-				if (this.expandable && this[KEY_CHILDREN_RENDERED_LEVEL]) {
-					this.renderChildren(true); // re-render
+				if (this.expandable) {
+					this.renderChildren(false, true); // re-render
 				}
 				if (!this.simple) {
 					this.renderBrief();
@@ -697,10 +697,13 @@ common: {
 				this.appendChild(elPropertyName);
 			}
 			
-			renderChildren(force) {
-				let maxLevel = this[KEY_CHILDREN_RENDERED_LEVEL] || this._suggestExpandLevel();
-				if (maxLevel < this[KEY_CHILDREN_RENDERED_LEVEL]) {
-					maxLevel = this[KEY_CHILDREN_RENDERED_LEVEL];
+			renderChildren(showMore, force) {
+				let maxLevel = this[KEY_CHILDREN_RENDERED_LEVEL];
+				if (showMore) {
+					maxLevel++;
+				}
+				else if (!maxLevel) {
+					maxLevel = this._suggestExpandLevel();
 				}
 				let prevRenderedCnt = this[KEY_CHILDREN_RENDERED_ITEMS] || 0;
 				let maxRows = 100;
@@ -722,11 +725,11 @@ common: {
 				const allDescriptors = this.constructor._getDescriptors(value, true, true);
 				
 				for (const descriptor of allDescriptors) {
-					updateLevel = descriptor.level;
 					if (descriptor.level > maxLevel) {
 						hasMore = true;
 						break;
 					}
+					updateLevel = descriptor.level;
 					if (renderedCnt >= maxRows) {
 						hasMore = true;
 						break;
@@ -759,9 +762,7 @@ common: {
 				}
 				this.expanded = true;
 				
-				if (!this.totalRenderedCnt) {
-					this.renderChildren();
-				}
+				this.renderChildren(false);
 				let res = 1;
 				if (depth > 0) {
 					const childrenIvEls = this.querySelectorAll(':scope > inspect-value[slot="children"]');
@@ -848,7 +849,7 @@ common: {
 				if (!this.expandable) {
 					return;
 				}
-				this.renderChildren();
+				this.renderChildren(true);
 			}
 			
 			$$onSlotChange(event) {
