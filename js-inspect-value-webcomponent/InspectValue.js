@@ -722,10 +722,15 @@ common: {
 				
 				for (const descriptor of allDescriptors) {
 					if (descriptor.level > maxLevel) {
-						hasMore = true;
-						break;
+						if (renderedCnt === 0) {
+							maxLevel++;
+						}
+						else {
+							hasMore = true;
+							break;
+						}
 					}
-					updateLevel = descriptor.level;
+					updateLevel = descriptor.level || 0;
 					if (renderedCnt >= maxRows) {
 						hasMore = true;
 						break;
@@ -1028,7 +1033,16 @@ common: {
 			
 			static *_getDescriptors(obj0, includeExtra, uniqueNames) {
 				if (includeExtra) {
-					yield* this._getDescriptorsExtra(obj0);
+					try {
+						yield* this._getDescriptorsExtra(obj0);
+					}
+					catch (err) {
+						let knownError = false;
+						knownError = knownError || err.message === `Function.prototype.toString requires that 'this' be a Function`;
+						if (!knownError) {
+							console.warn(err);
+						}
+					}
 				}
 				const allNames = !uniqueNames ? null : new Set();
 				
