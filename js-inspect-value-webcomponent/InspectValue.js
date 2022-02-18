@@ -260,10 +260,12 @@ common: {
 			
 			:host #elBtnShowMore {
 				display: inline-block;
-				padding: 0.25em 0;
+				padding: 0.25em;
 				line-height: 0.5em;
-				
 				margin-left: 2em;
+				border-radius: 3px;
+				border: transparent 1px solid;
+				
 				display: none;
 			}
 			:host(:not([disabled])) #elBtnShowMore {
@@ -277,6 +279,14 @@ common: {
 			}
 			:host([expanded]) #elWrapper[iv-i-has-more] #elBtnShowMore {
 				display: inline-block;
+			}
+			:host(:not([disabled])) #elBtnShowMore:active {
+				border-color: currentColor;
+			}
+			@media(hover: hover) and (pointer: fine) {
+				:host(:not([disabled])) #elBtnShowMore:hover {
+					border-color: currentColor;
+				}
 			}
 			
 			/* Property: */
