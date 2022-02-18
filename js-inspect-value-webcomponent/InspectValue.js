@@ -4,6 +4,7 @@ common: {
 	const KEY_LISTENERS = Symbol('listeners');
 	
 	const KEY_CHILDREN_RENDERED_LEVEL = Symbol('childrenRenderedLevel');
+	const KEY_CHILDREN_RENDERED_ITEMS = Symbol('childrenRenderedItems');
 	const KEY_IGNORE_ATTRIBUTE_CHANGES = Symbol('ignoreAttributeChanges');
 	
 	class InfoText extends String {}
@@ -633,7 +634,7 @@ common: {
 			
 			renderSecondary() {
 				if (this.expandable && this[KEY_CHILDREN_RENDERED_LEVEL]) {
-					this.renderChildren(this[KEY_CHILDREN_RENDERED_LEVEL], true); // re-render
+					this.renderChildren(true); // re-render
 				}
 				if (!this.simple) {
 					this.renderBrief();
@@ -696,56 +697,54 @@ common: {
 				this.appendChild(elPropertyName);
 			}
 			
-			renderChildren(levelLimit, force) {
-				if (!levelLimit || levelLimit < 0) {
-					levelLimit = Infinity;
+			renderChildren(force) {
+				let maxLevel = this[KEY_CHILDREN_RENDERED_LEVEL] || this._suggestExpandLevel();
+				if (maxLevel < this[KEY_CHILDREN_RENDERED_LEVEL]) {
+					maxLevel = this[KEY_CHILDREN_RENDERED_LEVEL];
 				}
-				let prevLevelLimit = this[KEY_CHILDREN_RENDERED_LEVEL] || 0;
-				if (levelLimit === prevLevelLimit && !force) {
-					return false;
-				}
-				if (levelLimit <= prevLevelLimit) {
-					prevLevelLimit = 0; // reset
+				let prevRenderedCnt = this[KEY_CHILDREN_RENDERED_ITEMS] || 0;
+				let maxRows = 100;
+				if (force) {
+					// reset
+					maxRows = prevRenderedCnt;
+					prevRenderedCnt = 0;
+					maxLevel = this[KEY_CHILDREN_RENDERED_LEVEL];
 					for (const el of this.shadowRoot.elSlotChildren.assignedNodes()) {
 						el.parentElement.removeChild(el);
 					}
 				}
+				let renderedCnt = 0;
+				let totalCnt = 0;
+				let hasMore = false;
+				let updateLevel = this[KEY_CHILDREN_RENDERED_LEVEL];
 				
 				const value = this.value;
-				const includeExtra = prevLevelLimit === 0;
-				const allDescriptors = this.constructor._getDescriptors(value, includeExtra);
-				let hasMore = false;
-				let rendered = false;
-				const allRenderedNames = new Set();
+				const allDescriptors = this.constructor._getDescriptors(value, true, true);
 				
 				for (const descriptor of allDescriptors) {
-					if (descriptor.level >= levelLimit) {
-						if (!rendered) {
-							levelLimit++;
-						}
-						else {
-							hasMore = true;
-							break;
-						}
+					updateLevel = descriptor.level;
+					if (descriptor.level > maxLevel) {
+						hasMore = true;
+						break;
 					}
-					if (descriptor.hasOwnProperty('name')) {
-						if (allRenderedNames.has(descriptor.name)) {
-							continue;
-						}
-						allRenderedNames.add(descriptor.name);
+					if (renderedCnt >= maxRows) {
+						hasMore = true;
+						break;
 					}
-					if (descriptor.level < prevLevelLimit) {
+					totalCnt++;
+					if (totalCnt <= prevRenderedCnt) {
 						// skip already rendered descriptors
 						continue;
 					}
+					renderedCnt++;
 					const elProperty = this.constructor.fromDescriptor(descriptor, value);
 					elProperty.slot = 'children';
 					this.appendChild(elProperty);
-					rendered = true;
 				}
 				
 				this.shadowRoot.elWrapper.toggleAttribute('iv-i-has-more', hasMore);
-				this[KEY_CHILDREN_RENDERED_LEVEL] = levelLimit;
+				this[KEY_CHILDREN_RENDERED_LEVEL] = updateLevel;
+				this[KEY_CHILDREN_RENDERED_ITEMS] = totalCnt;
 				return true;
 			}
 			
@@ -760,7 +759,9 @@ common: {
 				}
 				this.expanded = true;
 				
-				this.renderChildren(this._suggestExpandLevel());
+				if (!this.totalRenderedCnt) {
+					this.renderChildren();
+				}
 				let res = 1;
 				if (depth > 0) {
 					const childrenIvEls = this.querySelectorAll(':scope > inspect-value[slot="children"]');
@@ -793,12 +794,17 @@ common: {
 			
 			_suggestExpandLevel() {
 				let level = 1;
-				if (level < this[KEY_CHILDREN_RENDERED_LEVEL]) {
-					level = this[KEY_CHILDREN_RENDERED_LEVEL];
-				}
 				const value = this.value;
-				if (value != null && value.constructor !== Object && value.constructor !== Array) {
-					level = Math.max(level, 2);
+				const simpleConstructors = [
+					Object,
+					Array,
+					Boolean,
+					Number,
+					BigInt,
+					String,
+				];
+				if (value != null && simpleConstructors.indexOf(value.constructor) > -1) {
+					level = 0;
 				}
 				return level;
 			}
@@ -842,11 +848,7 @@ common: {
 				if (!this.expandable) {
 					return;
 				}
-				this.renderChildren(
-					this[KEY_CHILDREN_RENDERED_LEVEL]
-						? this[KEY_CHILDREN_RENDERED_LEVEL] + 1
-						: Infinity
-				);
+				this.renderChildren();
 			}
 			
 			$$onSlotChange(event) {
@@ -1030,24 +1032,29 @@ common: {
 				}
 			}
 			
-			static *_getDescriptors(obj0, includeExtra) {
+			static *_getDescriptors(obj0, includeExtra, uniqueNames) {
 				if (includeExtra) {
 					yield* this._getDescriptorsExtra(obj0);
 				}
-				const set = new Set();
+				const allNames = !uniqueNames ? null : new Set();
+				
 				for (let obj = obj0, level = 0; obj !== null; obj = Object.getPrototypeOf(obj), level++) {
 					let descriptors = Object.getOwnPropertyDescriptors(obj);
 					let keys = Object.getOwnPropertyNames(obj)
 						.concat(Object.getOwnPropertySymbols(obj))
 					;
 					for (const k of keys) {
-						if (!set.has(k)) {
-							const descriptor = descriptors[k];
-							descriptor.name = k;
-							descriptor.level = level;
-							descriptor.inherited = obj != obj0;
-							yield descriptor;
+						if (allNames) {
+							if (allNames.has(k)) {
+								continue;
+							}
+							allNames.add(k);
 						}
+						const descriptor = descriptors[k];
+						descriptor.name = k;
+						descriptor.level = level;
+						descriptor.inherited = obj != obj0;
+						yield descriptor;
 					}
 				}
 			}
