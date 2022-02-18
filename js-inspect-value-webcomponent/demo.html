@@ -5,19 +5,49 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Inspect Value</title>
 <script src="./InspectValue.js"></script>
+<script>!function(e,t){"function"==typeof define&&define.amd?define(["exports"],t):t("undefined"!=typeof exports?exports:e.microlight={})}(this,function(e){var t,i=window,n=document,o="appendChild",r="test",a=";text-shadow:",l="opacity:.",s=" 0px 0px ",c="3px 0px 5",d=")",u=n.getElementsByClassName("microlight"),f=function(e){for(e=0;t=u[e++];)for(var f,p,h,g,m,y=t.textContent,x=0,b=y[0],w=1,v=t.innerHTML="",k=0,C=/(\d*\, \d*\, \d*)(, ([.\d]*))?/g.exec(i.getComputedStyle(t).color),N="px rgba("+C[1]+",",E=C[3]||1;p=f,f=7>k&&"\\"==f?1:w;){if(w=b,b=y[++x],g=v.length>1,!w||k>8&&"\n"==w||[/\S/[r](w),1,1,!/[$\w]/[r](w),("/"==f||"\n"==f)&&g,'"'==f&&g,"'"==f&&g,y[x-4]+p+f=="-->",p+f=="*/"][k])for(v&&(t[o](m=n.createElement("span")).setAttribute("style",["",a+s+9+N+.7*E+"),"+s+2+N+.4*E+d,l+6+a+s+7+N+E/4+"),"+s+3+N+E/4+d,l+7+a+c+N+E/5+"),-"+c+N+E/5+d,"font-style:italic;"+l+5+a+c+N+E/4+"),-"+c+N+E/4+d][k?3>k?2:k>6?4:k>3?3:+/^(a(bstract|lias|nd|rguments|rray|s(m|sert)?|uto)|b(ase|egin|ool(ean)?|reak|yte)|c(ase|atch|har|hecked|lass|lone|ompl|onst|ontinue)|de(bugger|cimal|clare|f(ault|er)?|init|l(egate|ete)?)|do|double|e(cho|ls?if|lse(if)?|nd|nsure|num|vent|x(cept|ec|p(licit|ort)|te(nds|nsion|rn)))|f(allthrough|alse|inal(ly)?|ixed|loat|or(each)?|riend|rom|unc(tion)?)|global|goto|guard|i(f|mp(lements|licit|ort)|n(it|clude(_once)?|line|out|stanceof|t(erface|ernal)?)?|s)|l(ambda|et|ock|ong)|m(icrolight|odule|utable)|NaN|n(amespace|ative|ext|ew|il|ot|ull)|o(bject|perator|r|ut|verride)|p(ackage|arams|rivate|rotected|rotocol|ublic)|r(aise|e(adonly|do|f|gister|peat|quire(_once)?|scue|strict|try|turn))|s(byte|ealed|elf|hort|igned|izeof|tatic|tring|truct|ubscript|uper|ynchronized|witch)|t(emplate|hen|his|hrows?|ransient|rue|ry|ype(alias|def|id|name|of))|u(n(checked|def(ined)?|ion|less|signed|til)|se|sing)|v(ar|irtual|oid|olatile)|w(char_t|hen|here|hile|ith)|xor|yield)$/[r](v):0]),m[o](n.createTextNode(v))),h=k&&7>k?k:h,v="",k=11;![1,/[\/{}[(\-+*=<>:;|\\.,?!&@~]/[r](w),/[\])]/[r](w),/[$\w]/[r](w),"/"==w&&2>h&&"<"!=f,'"'==w,"'"==w,w+b+y[x+1]+y[x+2]=="<!--",w+b=="/*",w+b=="//","#"==w][--k];);v+=w}};e.reset=f,"complete"==n.readyState?f():i.addEventListener("load",f,0)});</script>
 <style>
 
 inspect-value {
     /*display: block;*/
 }
 
+.code {
+    font-family: monospace;
+    white-space: pre;
+    background-color: #ecf6ff;
+    color: #052c36;
+    
+    /*background: #023;*/
+    padding: 1em;
+    max-width: 100%;
+    box-sizing: border-box;
+    overflow: hidden;
+    border-radius: 0.3em;
+    margin: 0.5em 0;
+    width: min-content;
+}
+
 </style>
+<script>
+
+window.addEventListener('DOMContentLoaded', (event) => {
+    for (const script of document.body.querySelectorAll('script[class="demo"]')) {
+        const pre = document.createElement('pre');
+        pre.className = 'code microlight';
+        pre.textContent = script.textContent.trim();
+        script.parentElement.insertBefore(pre, script);
+    }
+    microlight.reset();
+});
+
+</script>
 </head>
 <body>
-<inspect-value>Ololo Mememe</inspect-value>
-<script type="text/javascript">
+<h2>Prepare</h2>
+<script class="demo" type="text/javascript">
 
-function add(...els) {
+function show(...els) {
     const row = document.createElement('div');
     let first = true;
     for (const el of els) {
@@ -31,33 +61,123 @@ function add(...els) {
     return row;
 }
 
-function addValues(...values) {
-    return add(...values.map((value) => InspectValue.create(value)));
+function showValues(...values) {
+    return show(...values.map((value) => InspectValue.create(value)));
 }
 
+</script>
+
+<h2>Remember and show current time</h2>
+<script class="demo" type="text/javascript">
+
 const timeStart = new Date();
-add(InspectValue.create(timeStart, 'timeStart'));
-add(InspectValue.create(), InspectValue.create(null));
-add(InspectValue.create(true), InspectValue.create(false));
-addValues(0, 1234, NaN, 1/0);
-addValues(13461347123582458n);
-addValues("Ololo");
-addValues(new Boolean(1), new Number(1234), Object(BigInt(1234)));
-addValues(new String("Ololo"), new String(new Array(100).fill('long string').join(' ')));
-addValues([0, 1, "Mememe", 1234n]);
-addValues(new Array(100).fill('long string').join(' '));
-addValues(new Set([1,2,3,4]));
+show(InspectValue.create(timeStart, 'timeStart'));
+
+</script>
+
+<h2>Show undefined and null</h2>
+<script class="demo" type="text/javascript">
+
+show(InspectValue.create(), InspectValue.create(null));
+
+</script>
+
+<h2>Primitive booleans</h2>
+<script class="demo" type="text/javascript">
+
+show(InspectValue.create(true), InspectValue.create(false));
+
+</script>
+
+<h2>Primitive numbers</h2>
+<script class="demo" type="text/javascript">
+
+showValues(0, 1234, NaN, 1/0);
+
+</script>
+
+<h2>Primitive bigint</h2>
+<script class="demo" type="text/javascript">
+
+showValues(13461347123582458n);
+
+</script>
+
+<h2>Primitive string</h2>
+<script class="demo" type="text/javascript">
+
+showValues("Ololo");
+
+</script>
+
+<h2>Primitive object wrappers</h2>
+<script class="demo" type="text/javascript">
+
+showValues(new Boolean(1), new Number(1234), Object(BigInt(1234)));
+
+</script>
+
+<h2>Object Strings</h2>
+<script class="demo" type="text/javascript">
+
+showValues(new String("Ololo"));
+showValues(new String(new Array(100).fill('long string').join(' ')));
+
+</script>
+
+<h2>Array</h2>
+<script class="demo" type="text/javascript">
+
+showValues([0, 1, "Mememe", 1234n]);
+
+</script>
+
+<h2>Long string</h2>
+<script class="demo" type="text/javascript">
+
+showValues(new Array(100).fill('long string').join(' '));
+
+</script>
+
+<h2>Set</h2>
+<script class="demo" type="text/javascript">
+
+showValues(new Set([1,2,3,4]));
+
+</script>
+
+<h2>Map</h2>
+<script class="demo" type="text/javascript">
+
 var m = new Map();
 m.set({}, 'obj1');
 m.set([], 'arr');
 m.set({}, 'obj2');
 m.set(new Date(), 'date');
-addValues(m);
-addValues(document.body);
-const iv = InspectValue.create(undefined, 'inspect self');
+showValues(m);
+
+</script>
+
+<h2>HTMLElement <code>document.body</code></h2>
+<script class="demo" type="text/javascript">
+
+showValues(document.body);
+
+</script>
+
+<h2>HTMLElement: inspect self</h2>
+<script class="demo" type="text/javascript">
+
+const iv = InspectValue.create();
 iv.value = iv;
-add(iv);
-addValues({
+show(iv);
+
+</script>
+
+<h2>Object <code>{ &hellip; }</code></h2>
+<script class="demo" type="text/javascript">
+
+showValues({
     null: null,
     boolTrue: true,
     boolFalse: false,
@@ -69,40 +189,112 @@ addValues({
     [Symbol('sym')]: 'Symbol is here',
     Boolean: new Boolean(false),
 });
-addValues([,,,,1234,5,6,7,8]);
+
+</script>
+
+<h2>Array with skipped keys</h2>
+<script class="demo" type="text/javascript">
+
+showValues([,,,,1234,5,6,7,8]);
+
+</script>
+
+<h2>Array with extra properties</h2>
+<script class="demo" type="text/javascript">
+
 const arr = [0,1,,3,,5];
 arr.foo = 'bar';
 arr[10] = 10;
 arr.now = new Date();
-addValues(arr);
+showValues(arr);
 
-addValues(new Date());
-addValues(new Date(NaN));
-addValues(window);
-addValues(Symbol('sym'));
+</script>
+
+<h2>Date and invalid date</h2>
+<script class="demo" type="text/javascript">
+
+showValues(new Date(), new Date(NaN));
+
+</script>
+
+<h2>Symbol</h2>
+<script class="demo" type="text/javascript">
+
+showValues(Symbol('sym'));
+
+</script>
+
+<h2>Large object <code>window</code></h2>
+<script class="demo" type="text/javascript">
+
+showValues(window);
+
+</script>
+
+<h2>Custom class instance with defined getter</h2>
+<script class="demo" type="text/javascript">
 
 class Ololo {
     get ololo() {
         return 'mememe';
     }
 }
-add(InspectValue.create(new Ololo()));
+show(InspectValue.create(new Ololo()));
+
+</script>
+
+<h2>Named arrow function</h2>
+<script class="demo" type="text/javascript">
 
 const named = (param) => '1234' + param;
-addValues(named);
-addValues((param) => '5678' + param);
-addValues(new Error(`Test error`));
+showValues(named);
+
+</script>
+
+<h2>Anonymous arrow function</h2>
+<script class="demo" type="text/javascript">
+
+showValues((param) => '5678' + param);
+
+</script>
+
+<h2>Error instances</h2>
+<script class="demo" type="text/javascript">
+
+showValues(new Error(`Test error`));
 
 try {
     1n / 0n;
 }
 catch (err) {
-    addValues(err);
+    showValues(err);
 }
 
-add(InspectValue.create(new InspectValue.Getter(() => {
+</script>
+
+<h2>Special: instance of <code>InspectValue.Getter</code></h2>
+<script class="demo" type="text/javascript">
+
+show(InspectValue.create(new InspectValue.Getter(() => {
     return new InspectValue.InfoText(`You've clicked it`);
 }), 'inline getter'));
+
+</script>
+
+<h2>Special: instance of <code>InspectValue.ValueWrapper</code></h2>
+<p>
+    Value stored in special <code>InspectValue.ValueWrapper</code> is incrementing each second.
+</p>
+<script class="demo" type="text/javascript">
+
+let valueWrapper = new InspectValue.ValueWrapper(0);
+showValues(valueWrapper);
+valueWrapper._tmr = setInterval(() => { valueWrapper.set(valueWrapper.get() + 1) }, 1000);
+
+</script>
+
+<h2>Special: magic mix of <code>InspectValue.InfoText</code>, <code>InspectValue.ValueWrapper</code> and <code>InspectValue.Getter</code></h2>
+<script class="demo" type="text/javascript">
 
 let recursiveGetterFunction = () => {
     const infoText = new InspectValue.InfoText(`Returning same getter as a result`);
@@ -116,46 +308,47 @@ let recursiveGetterFunction = () => {
     return valueWrapper;
 };
 let recursiveGetter = new InspectValue.Getter(recursiveGetterFunction);
-addValues(InspectValue.create(recursiveGetterFunction));
-add(InspectValue.create(recursiveGetter, 'recursive inline getter'));
+showValues(InspectValue.create(recursiveGetterFunction));
+show(InspectValue.create(recursiveGetter, 'recursive inline getter'));
 
-let valueWrapper = new InspectValue.ValueWrapper(0);
-addValues(valueWrapper);
-valueWrapper._tmr = setInterval(() => { valueWrapper.set(valueWrapper.get() + 1) }, 1000);
+</script>
 
-(async () => {
-    let asyncFunction = async (a) => {
-        a = await a;
-        await new Promise(resolve => setTimeout(resolve, 5000));
-        if (isNaN(a)) {
-            throw new Error(`Argument 'a' is NaN`);
-        }
-        return a + 1
-    };
-    addValues(asyncFunction);
-    
-    const prom0 = asyncFunction(0);
-    addValues(prom0);
-    
-    const prom1 = asyncFunction(asyncFunction(0));
-    addValues(prom1);
-    const res1 = await prom1;
-    addValues(res1);
-    
-    const prom2 = asyncFunction(NaN);
-    addValues(prom2);
-    try {
-        // this would result in an error
-        const res2 = await prom2;
-        addValues(res2);
+<h2>Promises</h2>
+<p>
+    Refresh the page to see the Promises automatically update after they are resolved or rejected.
+</p>
+<script class="demo" type="text/javascript">
+
+let asyncFunction = async (a) => {
+    a = await a;
+    await new Promise(resolve => setTimeout(resolve, 5000));
+    if (isNaN(a)) {
+        throw new Error(`Argument 'a' is NaN`);
     }
-    catch (err) {
-        console.warn(`Expected error`, err);
-    }
-})();
+    return a + 1
+};
+showValues(asyncFunction);
 
-const timeEnd = new Date();
-add(InspectValue.create(timeEnd, 'timeEnd'), InspectValue.create(timeEnd - timeStart, 'renderDuration'));
+const prom0 = asyncFunction(0);
+showValues(prom0);
+
+const prom1 = asyncFunction(asyncFunction(0));
+showValues(prom1);
+
+const prom2 = asyncFunction(NaN);
+showValues(prom2);
+prom2
+    .then(res => console.error(`Got unexpected result: `, res))
+    .catch(err => console.warn(`Expected error: `, err))
+;
+
+</script>
+
+<h2>Proxy</h2>
+<p>
+    Middle click it to update the view (property <code>b</code> added after element inspected).
+</p>
+<script class="demo" type="text/javascript">
 
 const proxy = new Proxy({}, {
     get(target, key) {
@@ -166,8 +359,16 @@ const proxy = new Proxy({}, {
     },
 });
 proxy.a = 'a';
-add(InspectValue.create(proxy), document.createTextNode('<-- middle click it to update view'));
+show(InspectValue.create(proxy));
 proxy.b = 'b';
+
+</script>
+
+<h2>Calculate time taken to render everything above</h2>
+<script class="demo" type="text/javascript">
+
+const timeEnd = new Date();
+show(InspectValue.create(timeEnd, 'timeEnd'), InspectValue.create(timeEnd - timeStart, 'renderDuration'));
 
 </script>
 </body>
