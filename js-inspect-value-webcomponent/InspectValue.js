@@ -708,7 +708,7 @@ common: {
 				if (showMore) {
 					maxLevel++;
 				}
-				else if (!maxLevel) {
+				else if (maxLevel == null) {
 					maxLevel = this._suggestExpandLevel();
 				}
 				let prevRenderedCnt = this[KEY_CHILDREN_RENDERED_ITEMS] || 0;
@@ -731,8 +731,9 @@ common: {
 				const allDescriptors = this.constructor._getDescriptors(value, true, true);
 				
 				for (const descriptor of allDescriptors) {
-					if (descriptor.level > maxLevel) {
-						if (renderedCnt === 0) {
+					const level = descriptor.level || 0;
+					if (level > maxLevel) {
+						if (renderedCnt === 0 && showMore) {
 							maxLevel++;
 						}
 						else {
@@ -740,7 +741,7 @@ common: {
 							break;
 						}
 					}
-					updateLevel = descriptor.level || 0;
+					updateLevel = level;
 					if (renderedCnt >= maxRows) {
 						hasMore = true;
 						break;
