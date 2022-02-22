@@ -953,12 +953,7 @@ common: {
 						return this._generateValueBriefViewHTMLElement(value);
 					}
 					else if (value instanceof Promise) {
-						const done = new ValueWrapper(new InfoText("Pending\u2026"));
-						value
-							.then(() => done.set(new InfoText("Resolved")))
-							.catch(() => done.set(new InfoText("Error")))
-						;
-						return [this.create(done)];
+						return this._generateValueBriefViewPromise(value);
 					}
 					else {
 						return this._generateValueBriefViewObject(value);
@@ -968,6 +963,17 @@ common: {
 					return this._generateValueBriefViewFunction(value);
 				}
 				return undefined;
+			}
+			
+			static _generateValueBriefViewPromise(value) {
+				const done = new ValueWrapper(new InfoText("Pending\u2026"));
+				value
+					.then(() => done.set(new InfoText("Resolved")))
+					.catch(() => done.set(new InfoText("Error")))
+				;
+				const el = this.create(done);
+				el.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="1.2em" height="1.2em" viewBox="0 0 100 100"><circle cx="50" cy="50" r="37" stroke-width="21" stroke="currentColor" stroke-dasharray="58.119464091411174 58.119464091411174" fill="none" stroke-linecap="round"><animateTransform attributeName="transform" type="rotate" repeatCount="indefinite" dur="2s" keyTimes="0;1" values="0 50 50;360 50 50"></animateTransform></circle></svg>`;
+				return [el];
 			}
 			
 			static _generateValueBriefViewFunction(value) {
