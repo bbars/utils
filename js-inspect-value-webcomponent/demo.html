@@ -345,9 +345,6 @@ prom2
 </script>
 
 <h2>Proxy</h2>
-<p>
-    Middle click it to update the view (property <code>b</code> added after element inspected).
-</p>
 <script class="demo" type="text/javascript">
 
 const proxy = new Proxy({}, {
@@ -359,8 +356,21 @@ const proxy = new Proxy({}, {
     },
 });
 proxy.a = 'a';
-show(InspectValue.create(proxy));
 proxy.b = 'b';
+show(InspectValue.create(proxy));
+
+</script>
+
+<h2>Update the view</h2>
+<p>
+    The property <code>b</code> is added to the object after the object has been inspected. So there's no such property in the brief view. Middle click main view to update the whole view (including brief).
+</p>
+<script class="demo" type="text/javascript">
+
+const obj = {};
+obj.a = 'A';
+show(InspectValue.create(obj));
+obj.b = 'B';
 
 </script>
 
