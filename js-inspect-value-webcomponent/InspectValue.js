@@ -845,7 +845,10 @@ common: {
 				if (this.disabled) {
 					return;
 				}
-				if (event.button === 1) {
+				if (event.button === 0) {
+					event.preventDefault();
+				}
+				else if (event.button === 1) {
 					event.preventDefault();
 					this.renderSecondary();
 				}
@@ -979,7 +982,18 @@ common: {
 			static _generateValueBriefViewFunction(value) {
 				let res = '';
 				const m = /^[^\(]*\((.*)\)\s*(?:\{|=>)/.exec(value);
-				res += '(' + (!m ? '' : m[1]).trim() + ')';
+				let params = (!m ? '' : m[1]).trim();
+				try {
+					if (!params && value.length) {
+						params = value.length > 26 ? '\u2026' : new Array(value.length)
+							.fill('')
+							.map((v, i) => String.fromCharCode(97 + i))
+							.join(', ')
+						;
+					}
+				}
+				catch {}
+				res += `(${params})`;
 				return [res];
 			}
 			
