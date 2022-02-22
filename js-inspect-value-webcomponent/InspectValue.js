@@ -914,7 +914,19 @@ common: {
 				else if (ivType === 'class') {
 					return [`class ${value.name}`.trim()];
 				}
+				else if (ivType === 'number') {
+					return this._generateValueViewNumber(value);
+				}
 				return [String(value)];
+			}
+			
+			static _generateValueViewNumber(value) {
+					let sign = '';
+					if (value === 0 && 1 / value === -Infinity) {
+						sign = '-';
+						value = 0;
+					}
+					return [sign + String(value)];
 			}
 			
 			static _generateValueViewString(value) {

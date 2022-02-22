@@ -92,7 +92,8 @@ show(InspectValue.create(true), InspectValue.create(false));
 <h2>Primitive numbers</h2>
 <script class="demo" type="text/javascript">
 
-showValues(0, 1234, NaN, 1/0);
+const negativeZero = -0;
+showValues(0, negativeZero, 1234, NaN, 1/0, 1/negativeZero);
 
 </script>
 
