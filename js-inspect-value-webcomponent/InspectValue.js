@@ -845,10 +845,7 @@ common: {
 				if (this.disabled) {
 					return;
 				}
-				if (event.button === 0) {
-					event.preventDefault();
-				}
-				else if (event.button === 1) {
+				if (event.button === 1) {
 					event.preventDefault();
 					this.renderSecondary();
 				}
